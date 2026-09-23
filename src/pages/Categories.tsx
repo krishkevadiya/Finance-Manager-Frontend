@@ -358,24 +358,21 @@ function Categories() {
           </div>
 
           {sortedCategories.length === 0 ? (
-            <div className="empty-state">
-              <p>
-                No categories yet.
-              </p>
+  <div className="category-empty-state">
+    <p className="category-empty-text">
+      No categories yet.
+    </p>
 
-              <button
-                type="button"
-                className="primary-button"
-                onClick={openCreateModal}
-                style={{
-                  marginTop: 16,
-                }}
-              >
-                <Plus size={17} />
-                Create Category
-              </button>
-            </div>
-          ) : (
+    <button
+      type="button"
+      className="primary-button category-empty-button"
+      onClick={openCreateModal}
+    >
+      <Plus size={17} />
+      Create Category
+    </button>
+  </div>
+) : (
             <div className="category-list">
               {sortedCategories.map(
                 (category) => {

@@ -1015,6 +1015,7 @@ function Budgets() {
                   Manage Categories
                 </button>
               </div>
+              
             ) : budgets.length ===
               0 ? (
               <div
@@ -1306,65 +1307,106 @@ function Budgets() {
                         }}
                       >
                         <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 12,
-                            alignItems: "flex-end",
-                            marginBottom: 10,
-                          }}
-                        >
-                          <div>
-                            <p
-                              style={{
-                                margin: "0 0 5px",
-                                fontSize: 12,
-                                fontWeight: 650,
-                                color: "#64748b",
-                              }}
-                            >
-                              Spent / Monthly Limit
-                            </p>
-                            <strong
-                              style={{
-                                display: "block",
-                                fontSize: 22,
-                                lineHeight: 1.2,
-                                fontWeight: 800,
-                                color: budget.budgetStatus?.exceeded ? "#dc2626" : "#2563eb",
-                              }}
-                            >
-                              {formatCurrency(
-                                budget.budgetStatus?.spentAmount ?? 0
-                              )}
-                              <span
-                                style={{
-                                  color: "#94a3b8",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {" / "}
-                                {formatCurrency(budget.amount)}
-                              </span>
-                            </strong>
-                          </div>
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 16,
+    alignItems: "flex-start",
+    marginBottom: 12,
+  }}
+>
+  <div
+    style={{
+      minWidth: 0,
+      flex: 1,
+    }}
+  >
+    <p
+      style={{
+        margin: "0 0 6px",
+        fontSize: 12,
+        fontWeight: 650,
+        color: "#64748b",
+      }}
+    >
+      Spent / Monthly Limit
+    </p>
 
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 800,
-                              color: budget.budgetStatus?.exceeded ? "#b91c1c" : "#047857",
-                              background: budget.budgetStatus?.exceeded ? "#fef2f2" : "#ecfdf5",
-                              border: `1px solid ${budget.budgetStatus?.exceeded ? "#fecaca" : "#a7f3d0"}`,
-                              borderRadius: 999,
-                              padding: "5px 9px",
-                            }}
-                          >
-                            {budget.budgetStatus?.exceeded
-                              ? "Over Budget"
-                              : `${Math.round(budget.budgetStatus?.percentageUsed ?? 0)}% Used`}
-                          </span>
-                        </div>
+    <strong
+      style={{
+        display: "block",
+        fontSize: 22,
+        lineHeight: 1.2,
+        fontWeight: 800,
+        color: budget.budgetStatus?.exceeded
+          ? "#dc2626"
+          : "#2563eb",
+      }}
+    >
+      {formatCurrency(
+        budget.budgetStatus?.spentAmount ?? 0
+      )}
+
+      <span
+        style={{
+          color: "#94a3b8",
+          fontWeight: 600,
+        }}
+      >
+        {" / "}
+        {formatCurrency(budget.amount)}
+      </span>
+    </strong>
+  </div>
+
+  <span
+    style={{
+      flexShrink: 0,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+
+      minWidth: 78,
+      minHeight: 34,
+      padding: "6px 10px",
+
+      boxSizing: "border-box",
+
+      borderRadius: 10,
+
+      fontSize: 11,
+      lineHeight: 1.15,
+      fontWeight: 800,
+      textAlign: "center",
+      letterSpacing: "0.1px",
+
+      color: budget.budgetStatus?.exceeded
+        ? "#b91c1c"
+        : "#047857",
+
+      background: budget.budgetStatus?.exceeded
+        ? "#fff1f2"
+        : "#ecfdf5",
+
+      border: `1px solid ${
+        budget.budgetStatus?.exceeded
+          ? "#fecdd3"
+          : "#a7f3d0"
+      }`,
+    }}
+  >
+    {budget.budgetStatus?.exceeded ? (
+      <>
+        <span>Over</span>
+        <span>&nbsp;Budget</span>
+      </>
+    ) : (
+      `${Math.round(
+        budget.budgetStatus?.percentageUsed ?? 0
+      )}% Used`
+    )}
+  </span>
+</div>
 
                         <div
                           style={{
