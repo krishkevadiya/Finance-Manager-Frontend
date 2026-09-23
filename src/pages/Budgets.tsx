@@ -969,52 +969,93 @@ function Budgets() {
             {expenseCategories.length ===
             0 ? (
               <div
-                className="empty-state"
-                style={{
-                  padding:
-                    "45px 20px",
-                }}
-              >
-                <Target
-                  size={38}
-                  style={{
-                    marginBottom: 12,
-                    opacity: 0.5,
-                  }}
-                />
+  style={{
+    width: "100%",
+    minHeight: 220,
+    padding: "36px 20px",
+    boxSizing: "border-box",
 
-                <div
-                  style={{
-                    fontWeight: 700,
-                    marginBottom: 6,
-                  }}
-                >
-                  No expense
-                  categories found
-                </div>
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
 
-                <div>
-                  Create an expense
-                  category first
-                  before adding a
-                  budget.
-                </div>
+    gap: 12,
 
-                <button
-                  type="button"
-                  className="primary-button"
-                  style={{
-                    marginTop: 18,
-                  }}
-                  onClick={() =>
-                    navigate(
-                      "/categories"
-                    )
-                  }
-                >
-                  Manage Categories
-                </button>
-              </div>
+    textAlign: "center",
+    background: "#f8fafc",
+    borderRadius: 14,
+  }}
+>
+  {/* Icon */}
+  <div
+    style={{
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+
+      background: "#eff6ff",
+      color: "#2563eb",
+
+      marginBottom: 2,
+    }}
+  >
+    <Target size={26} />
+  </div>
+
+  {/* Title */}
+  <div
+    style={{
+      color: "#0f172a",
+      fontSize: 15,
+      fontWeight: 700,
+      lineHeight: 1.4,
+    }}
+  >
+    No expense categories found
+  </div>
+
+  {/* Description */}
+  <div
+    style={{
+      maxWidth: 440,
+      color: "#64748b",
+      fontSize: 13,
+      lineHeight: 1.5,
+    }}
+  >
+    Create an expense category first before adding a budget.
+  </div>
+
+  {/* Button */}
+  <button
+    type="button"
+    className="primary-button"
+    onClick={() => navigate("/categories")}
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: 7,
+
+      minHeight: 42,
+      padding: "0 20px",
+
+      marginTop: 4,
+
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+    }}
+  >
+    <Target size={16} />
+    Manage Categories
+  </button>
+</div>
               
             ) : budgets.length ===
               0 ? (

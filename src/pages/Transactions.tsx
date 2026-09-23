@@ -48,6 +48,20 @@ interface Transaction {
   account?: Account;
 }
 
+interface BudgetStatus {
+  budgetId: number;
+  categoryId: number;
+  category: string;
+  month: number;
+  year: number;
+  budgetAmount: number;
+  spentAmount: number;
+  remainingAmount: number;
+  percentageUsed: number;
+  exceeded: boolean;
+  exceededBy: number;
+}
+
 interface AccountsResponse {
   accounts?: Account[];
 }
@@ -72,6 +86,13 @@ interface TransactionsResponse {
     totalRecords?: number;
     totalPages?: number;
   };
+}
+
+interface TransactionMutationResponse {
+  message?: string;
+  transaction?: Transaction;
+  updatedBalance?: number;
+  budgetStatus?: BudgetStatus | null;
 }
 
 interface ApiErrorResponse {
@@ -900,8 +921,13 @@ function Transactions() {
   const [deletingId, setDeletingId] =
     useState<number | null>(null);
 
+  const [budgetAlert, setBudgetAlert] =
+    useState<BudgetStatus | null>(null);
+
   const [deleteTarget, setDeleteTarget] =
     useState<Transaction | null>(null);
+    
+
 
   /* =========================
      LOAD ACCOUNTS
@@ -1036,6 +1062,7 @@ function Transactions() {
     void fetchTransactions();
   }, [fetchTransactions]);
 
+  
   /* =========================
      TOTALS
   ========================= */
@@ -1315,16 +1342,27 @@ function Transactions() {
     };
 
     try {
+      let response;
+
       if (editingTransaction) {
-        await api.put(
+        response = await api.put<TransactionMutationResponse>(
           `/transactions/${editingTransaction.id}`,
           payload
         );
       } else {
-        await api.post(
+        response = await api.post<TransactionMutationResponse>(
           "/transactions",
           payload
         );
+      }
+
+      const budgetStatus =
+        response.data?.budgetStatus;
+
+      if (budgetStatus?.exceeded) {
+        setBudgetAlert(budgetStatus);
+      } else {
+        setBudgetAlert(null);
       }
 
       setShowModal(false);
@@ -1516,6 +1554,134 @@ function Transactions() {
 
           </div>
         )}
+
+        {budgetAlert && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            style={{
+              position: "fixed",
+              top: 24,
+              right: 24,
+              zIndex: 9999,
+              width: "min(420px, calc(100vw - 32px))",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 13,
+              padding: 16,
+              boxSizing: "border-box",
+              border: "1px solid #fecaca",
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #fff7f7 0%, #fef2f2 100%)",
+              boxShadow: "0 18px 45px rgba(127, 29, 29, 0.16), 0 5px 16px rgba(15, 23, 42, 0.08)",
+              animation: "budgetAlertSlideIn 0.28s ease-out",
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                flex: "0 0 40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 11,
+                color: "#dc2626",
+                background: "#fee2e2",
+                fontSize: 20,
+                fontWeight: 900,
+              }}
+            >
+              !
+            </div>
+
+            <div
+              style={{
+                minWidth: 0,
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
+              <strong
+                style={{
+                  color: "#991b1b",
+                  fontSize: 14,
+                  lineHeight: 1.3,
+                  fontWeight: 800,
+                }}
+              >
+                Budget Exceeded
+              </strong>
+
+              <span
+                style={{
+                  color: "#b91c1c",
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                }}
+              >
+                {budgetAlert.category} budget has been exceeded by {" "}
+                {formatMoney(budgetAlert.exceededBy)}.
+              </span>
+
+              <small
+                style={{
+                  color: "#7f1d1d",
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                }}
+              >
+                Spent {formatMoney(budgetAlert.spentAmount)} of {" "}
+                {formatMoney(budgetAlert.budgetAmount)} ({" "}
+                {budgetAlert.percentageUsed.toFixed(0)}%).
+              </small>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Dismiss budget warning"
+              onClick={() => setBudgetAlert(null)}
+              style={{
+                width: 30,
+                height: 30,
+                flex: "0 0 30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: 0,
+                borderRadius: 8,
+                color: "#991b1b",
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
+
+        <style>{`
+          @keyframes budgetAlertSlideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-12px) translateX(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) translateX(0);
+            }
+          }
+
+          @media (max-width: 600px) {
+            .budget-warning-mobile-safe {
+              left: 14px;
+              right: 14px;
+              width: auto !important;
+            }
+          }
+        `}</style>
 
         {/* FILTERS */}
 

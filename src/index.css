@@ -1763,79 +1763,148 @@ button:disabled {
   gap: 10px;
 }
 /* =========================================================
-   BUDGET OVERSPENDING WARNING
+   BUDGET EXCEEDED POPUP
    ========================================================= */
 
 .budget-warning-alert {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+
+  z-index: 9999;
+
+  width: min(420px, calc(100vw - 32px));
+
   display: flex;
   align-items: flex-start;
+
   gap: 13px;
-  margin-bottom: 22px;
-  padding: 15px 16px;
+
+  padding: 16px 16px 16px 17px;
+
+  box-sizing: border-box;
+
   border: 1px solid #fecaca;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #fff7f7 0%, #fef2f2 100%);
-  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.08);
+  border-radius: 16px;
+
+  background: linear-gradient(
+    135deg,
+    #fff7f7 0%,
+    #fef2f2 100%
+  );
+
+  box-shadow:
+    0 18px 45px rgba(127, 29, 29, 0.16),
+    0 5px 16px rgba(15, 23, 42, 0.08);
+
+  animation: budgetAlertSlideIn 0.28s ease-out;
 }
 
 .budget-warning-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 40px;
+  height: 40px;
+
+  flex: 0 0 40px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border-radius: 11px;
+
   color: #dc2626;
-  background: rgba(220, 38, 38, 0.10);
+  background: #fee2e2;
 }
 
 .budget-warning-content {
   min-width: 0;
-  display: flex;
+
   flex: 1;
+
+  display: flex;
   flex-direction: column;
-  gap: 3px;
+
+  gap: 4px;
 }
 
 .budget-warning-content strong {
   color: #991b1b;
+
   font-size: 14px;
+  line-height: 1.3;
+
   font-weight: 800;
 }
 
 .budget-warning-content span {
   color: #b91c1c;
+
   font-size: 13px;
   line-height: 1.45;
 }
 
 .budget-warning-content small {
   color: #7f1d1d;
-  font-size: 12px;
+
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .budget-warning-close {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 30px;
+  height: 30px;
+
+  flex: 0 0 30px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border: 0;
   border-radius: 8px;
+
   color: #991b1b;
   background: transparent;
+
   cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .budget-warning-close:hover {
-  background: rgba(220, 38, 38, 0.10);
+  background: #fee2e2;
+  color: #7f1d1d;
 }
 
-@media (max-width: 640px) {
+@keyframes budgetAlertSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@media (max-width: 600px) {
   .budget-warning-alert {
-    padding: 13px;
+    top: 14px;
+    right: 14px;
+    left: 14px;
+
+    width: auto;
+
+    padding: 14px;
+  }
+
+  .budget-warning-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
   }
 }
 /* Categories Empty State */
