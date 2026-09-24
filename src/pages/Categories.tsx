@@ -415,8 +415,8 @@ function Categories() {
                           >
                             {isIncome
                               ? "Income"
-                              : isBoth
-                              ? "Income & Expense"
+                              // : isBoth
+                              // ? "Income & Expense"
                               : "Expense"}
                           </span>
                         </div>
@@ -488,7 +488,7 @@ function Categories() {
                 <p>
                   {editingCategory
                     ? "Update your category details."
-                    : "Create a category for income, expenses, or both."}
+                    : "Create a category for income and expenses."}
                 </p>
               </div>
 
@@ -539,7 +539,7 @@ function Categories() {
                 >
                   <option value="expense">Expense</option>
                   <option value="income">Income</option>
-                  <option value="both">Income &amp; Expense</option>
+                  {/* <option value="both">Income &amp; Expense</option> */}
                 </select>
               </div>
 
