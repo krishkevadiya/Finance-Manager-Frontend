@@ -1952,3 +1952,105 @@ button:disabled {
 
   white-space: nowrap;
 }
+/* ========================================
+   Premium Transaction Pagination
+======================================== */
+
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  min-width: 120px;
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid #d8def0;
+  background: #ffffff;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  transform: none;
+  box-shadow: none;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #eef2ff, #ffffff);
+  border: 1px solid #d8def0;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.page-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-number {
+  width: 32px;
+  height: 32px;
+  background: #4f46e5;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.page-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+@media (max-width: 640px) {
+  .pagination-container {
+    gap: 12px;
+  }
+
+  .pagination-btn {
+    min-width: 100px;
+    height: 42px;
+    font-size: 13px;
+  }
+
+  .pagination-info {
+    padding: 8px 14px;
+  }
+
+  .page-number {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+}

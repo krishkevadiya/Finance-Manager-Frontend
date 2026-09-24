@@ -2208,53 +2208,37 @@ function Transactions() {
           )}
 
           {totalPages > 1 && (
-            <div className="pagination">
+  <div className="pagination-container">
+    <button
+      type="button"
+      className="pagination-btn"
+      disabled={page <= 1}
+      onClick={() =>
+        setPage((previous) => Math.max(1, previous - 1))
+      }
+    >
+      ← Previous
+    </button>
 
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={
-                  page <= 1
-                }
-                onClick={() =>
-                  setPage(
-                    (previous) =>
-                      Math.max(
-                        1,
-                        previous - 1
-                      )
-                  )
-                }
-              >
-                Previous
-              </button>
+    <div className="pagination-info">
+      <span className="page-label">Page</span>
+      <span className="page-number">{page}</span>
+      <span className="page-label">of</span>
+      <span className="page-total">{totalPages}</span>
+    </div>
 
-              <span>
-                Page {page} of{" "}
-                {totalPages}
-              </span>
-
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={
-                  page >= totalPages
-                }
-                onClick={() =>
-                  setPage(
-                    (previous) =>
-                      Math.min(
-                        totalPages,
-                        previous + 1
-                      )
-                  )
-                }
-              >
-                Next
-              </button>
-
-            </div>
-          )}
+    <button
+      type="button"
+      className="pagination-btn"
+      disabled={page >= totalPages}
+      onClick={() =>
+        setPage((previous) => Math.min(totalPages, previous + 1))
+      }
+    >
+      Next →
+    </button>
+  </div>
+)}
 
         </section>
 
