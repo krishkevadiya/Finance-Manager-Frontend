@@ -10,7 +10,7 @@ const getApiBaseUrl = (): string => {
 
   return (
     environment.env?.VITE_API_BASE_URL ||
-    "http://localhost:5000/api"
+    "https://finance-manager-backend-qmw1.onrender.com/api"
   );
 };
 
