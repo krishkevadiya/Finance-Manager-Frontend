@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -9,9 +10,11 @@ import {
   ArrowLeft,
   ArrowUpRight,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Edit3,
+  Filter,
   Plus,
   RefreshCw,
   Search,
@@ -24,6 +27,8 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import api from "../api/axios";
+import Loader from "../components/common/Loader";
+import CustomSelect, { SelectOption } from "../components/common/CustomSelect";
 
 type TransactionType = "income" | "expense";
 
@@ -260,6 +265,9 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   minDate?: string;
   maxDate?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  align?: "left" | "right";
 }
 
 const parseInputDate = (value: string): Date | null => {
@@ -296,11 +304,25 @@ function DatePicker({
   onChange,
   minDate,
   maxDate,
+  isOpen: isOpenProp,
+  onOpenChange,
+  align = "left",
 }: DatePickerProps) {
   const today = new Date();
   const selectedDate = parseInputDate(value);
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = isOpenProp !== undefined;
+  const open = isControlled ? isOpenProp : internalOpen;
+
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof next === "function" ? next(open) : next;
+    if (!isControlled) {
+      setInternalOpen(nextVal);
+    }
+    onOpenChange?.(nextVal);
+  };
+
   const [calendarView, setCalendarView] = useState<"days" | "months" | "years">("days");
   const [calendarMonth, setCalendarMonth] = useState<Date>(
     selectedDate
@@ -439,7 +461,7 @@ function DatePicker({
           minHeight: 48,
           padding: "0 12px",
           border: open
-            ? "1px solid #2563eb"
+            ? "1px solid #3b5bdb"
             : "1px solid #dbe3ef",
           borderRadius: 12,
           background: "#ffffff",
@@ -470,8 +492,8 @@ function DatePicker({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#eff6ff",
-              color: "#2563eb",
+              background: "#eaedff",
+              color: "#3b5bdb",
               flexShrink: 0,
             }}
           >
@@ -492,15 +514,15 @@ function DatePicker({
           </span>
         </span>
 
-        <span
+        <ChevronDown
+          size={16}
           style={{
             color: "#64748b",
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 160ms ease",
+            transition: "transform 180ms ease",
+            flexShrink: 0,
           }}
-        >
-          ▾
-        </span>
+        />
       </button>
 
       {open && (
@@ -509,8 +531,9 @@ function DatePicker({
             position: "absolute",
             zIndex: 60,
             top: "calc(100% + 8px)",
-            left: 0,
-            width: "min(370px, calc(100vw - 24px))",
+            left: align === "right" ? "auto" : 0,
+            right: align === "right" ? 0 : "auto",
+            width: "min(340px, calc(100vw - 24px))",
             padding: 18,
             border: "1px solid #e2e8f0",
             borderRadius: 18,
@@ -564,7 +587,7 @@ function DatePicker({
                 onClick={() => setCalendarView("months")}
                 style={{
                   border: "none",
-                  background: calendarView === "months" ? "#eff6ff" : "transparent",
+                  background: calendarView === "months" ? "#eaedff" : "transparent",
                   borderRadius: 8,
                   padding: "7px 8px",
                   color: "#0f172a",
@@ -582,7 +605,7 @@ function DatePicker({
                 onClick={() => setCalendarView("years")}
                 style={{
                   border: "none",
-                  background: calendarView === "years" ? "#eff6ff" : "transparent",
+                  background: calendarView === "years" ? "#eaedff" : "transparent",
                   borderRadius: 8,
                   padding: "7px 8px",
                   color: "#0f172a",
@@ -638,8 +661,8 @@ function DatePicker({
                       minHeight: 44,
                       border: selected ? "1px solid #7db5ff" : "1px solid transparent",
                       borderRadius: 11,
-                      background: selected ? "#eff6ff" : "transparent",
-                      color: selected ? "#2563eb" : "#0f172a",
+                      background: selected ? "#eaedff" : "transparent",
+                      color: selected ? "#3b5bdb" : "#0f172a",
                       fontSize: 13,
                       fontWeight: selected ? 700 : 500,
                       cursor: "pointer",
@@ -674,8 +697,8 @@ function DatePicker({
                       minHeight: 42,
                       border: selected ? "1px solid #7db5ff" : "1px solid transparent",
                       borderRadius: 11,
-                      background: selected ? "#eff6ff" : "transparent",
-                      color: selected ? "#2563eb" : "#0f172a",
+                      background: selected ? "#eaedff" : "transparent",
+                      color: selected ? "#3b5bdb" : "#0f172a",
                       fontSize: 13,
                       fontWeight: selected ? 700 : 500,
                       cursor: "pointer",
@@ -762,7 +785,7 @@ function DatePicker({
                           : "1px solid transparent",
                     borderRadius: 11,
                     background: selected
-                      ? "#eff6ff"
+                      ? "#eaedff"
                       : isToday
                         ? "#f8fbff"
                         : "transparent",
@@ -793,7 +816,7 @@ function DatePicker({
               gap: 12,
               marginTop: 16,
               paddingTop: 14,
-              borderTop: "1px solid #f1f5f9",
+              borderTop: "1px solid #e8ecff",
             }}
           >
             <button
@@ -814,7 +837,7 @@ function DatePicker({
               style={{
                 border: "none",
                 background: "transparent",
-                color: "#2563eb",
+                color: "#3b5bdb",
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -880,6 +903,16 @@ function Transactions() {
   const [totalRecords, setTotalRecords] =
     useState(0);
 
+  const [goToPage, setGoToPage] =
+    useState(1);
+
+  const [isGoToOpen, setIsGoToOpen] =
+    useState(false);
+
+  useEffect(() => {
+    setGoToPage(page);
+  }, [page]);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -900,6 +933,25 @@ function Transactions() {
       ...emptyFilters,
       accountId: accountIdFromUrl,
     });
+
+  const [showFilterCard, setShowFilterCard] = useState(false);
+  const [openControl, setOpenControl] = useState<string | null>(null);
+
+  const typeOptions: SelectOption[] = [
+    { value: "", label: "All Types" },
+    { value: "income", label: "Income" },
+    { value: "expense", label: "Expense" },
+  ];
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedFilters.type) count++;
+    if (appliedFilters.accountId) count++;
+    if (appliedFilters.category) count++;
+    if (appliedFilters.startDate) count++;
+    if (appliedFilters.endDate) count++;
+    return count;
+  }, [appliedFilters]);
 
   const [showModal, setShowModal] =
     useState(false);
@@ -978,8 +1030,11 @@ function Transactions() {
   ========================= */
 
   const fetchTransactions =
-    useCallback(async () => {
+    useCallback(async (isInitial = false) => {
       try {
+        if (isInitial) {
+          setLoading(true);
+        }
         setError("");
 
         const params: Record<
@@ -1045,13 +1100,17 @@ function Transactions() {
 
         setTransactions([]);
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+        }
       }
     }, [page, appliedFilters]);
 
   /* =========================
-     INITIAL LOAD
+     INITIAL & FILTER LOAD
   ========================= */
+
+  const isFirstMount = useRef(true);
 
   useEffect(() => {
     void fetchAccounts();
@@ -1059,7 +1118,12 @@ function Transactions() {
   }, [fetchAccounts, fetchCategories]);
 
   useEffect(() => {
-    void fetchTransactions();
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      void fetchTransactions(true);
+    } else {
+      void fetchTransactions(false);
+    }
   }, [fetchTransactions]);
 
   
@@ -1102,6 +1166,39 @@ function Transactions() {
     }, [transactions]);
 
   /* =========================
+     PAGINATION
+  ========================= */
+
+  const paginationItems = useMemo(() => {
+    const items: (number | string)[] = [];
+    if (totalPages <= 6) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(i);
+      }
+    } else {
+      if (page <= 2) {
+        items.push(1, 2, 3, "ellipsis-next", totalPages);
+      } else if (page === 3) {
+        items.push(1, 2, 3, 4, "ellipsis-next", totalPages);
+      } else if (page >= totalPages - 1) {
+        items.push(1, "ellipsis-prev", totalPages - 2, totalPages - 1, totalPages);
+      } else if (page === totalPages - 2) {
+        items.push(1, "ellipsis-prev", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        items.push(1, "ellipsis-prev", page - 1, page, page + 1, "ellipsis-next", totalPages);
+      }
+    }
+    return items;
+  }, [page, totalPages]);
+
+  const pageSelectOptions: SelectOption[] = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, i) => ({
+      value: String(i + 1),
+      label: String(i + 1),
+    }));
+  }, [totalPages]);
+
+  /* =========================
      FILTERS
   ========================= */
 
@@ -1131,6 +1228,7 @@ function Transactions() {
     setAppliedFilters({
       ...filters,
     });
+    setShowFilterCard(false);
   };
 
   const clearFilters = () => {
@@ -1141,7 +1239,9 @@ function Transactions() {
     setFilters(cleared);
     setAppliedFilters(cleared);
     setPage(1);
+    setShowFilterCard(false);
   };
+  
 
   /* =========================
      REFRESH
@@ -1449,26 +1549,34 @@ function Transactions() {
     [availableCategories, formData.category]
   );
 
-  /* =========================
-     LOADING
-  ========================= */
+  const accountOptions: SelectOption[] = useMemo(
+    () => [
+      { value: "", label: "All Accounts" },
+      ...accounts.map((account) => ({
+        value: String(account.id),
+        label: account.name,
+      })),
+    ],
+    [accounts]
+  );
 
-  if (loading) {
-    return (
-      <main className="dashboard-loading">
-        <div className="loading-box">
-          <RefreshCw
-            size={22}
-            className="spin"
-          />
-
-          <span>
-            Loading transactions...
-          </span>
-        </div>
-      </main>
-    );
-  }
+  const categoryOptions: SelectOption[] = useMemo(
+    () => [
+      { value: "", label: "All Categories" },
+      ...categories
+        .filter((category) =>
+          filters.type
+            ? category.type === filters.type ||
+              category.type === "both"
+            : true
+        )
+        .map((category) => ({
+          value: category.name,
+          label: getCategoryLabel(category),
+        })),
+    ],
+    [categories, filters.type]
+  );
 
   return (
     <main className="dashboard-page">
@@ -1481,20 +1589,6 @@ function Transactions() {
 
           <div>
 
-            <button
-              type="button"
-              className="back-button"
-              onClick={() =>
-                navigate(
-                  "/dashboard"
-                )
-              }
-            >
-              <ArrowLeft size={17} />
-
-              Back to Dashboard
-            </button>
-
             <p className="eyebrow">
               Finance Management
             </p>
@@ -1504,28 +1598,198 @@ function Transactions() {
             </h1>
 
             <p className="page-subtitle">
-              Track and manage your
-              income and expenses
+              Track and manage your income and expenses
             </p>
 
           </div>
 
           <div className="header-actions">
-
-            
             <button
               type="button"
-              className="primary-button"
-              onClick={openCreate}
-              disabled={
-                accounts.length === 0
-              }
+              className={`header-filter-btn ${activeFilterCount > 0 ? "active" : ""}`}
+              onClick={() => {
+                setShowFilterCard((prev) => {
+                  if (prev) setOpenControl(null);
+                  return !prev;
+                });
+              }}
+              aria-label="Filter transactions"
             >
-              <Plus size={18} />
+              <Filter size={14} />
+              <span>
+                {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters"}
+              </span>
+              {activeFilterCount > 0 && (
+                <span className="filter-active-dot" />
+              )}
+            </button>
 
+            <button
+              type="button"
+              className="primary-button compact-btn"
+              onClick={openCreate}
+            >
+              <Plus size={16} />
               Add Transaction
             </button>
 
+            {showFilterCard && (
+              <>
+                <div
+                  className="header-filter-backdrop"
+                  onClick={() => {
+                    setShowFilterCard(false);
+                    setOpenControl(null);
+                  }}
+                />
+                <div
+                  className="header-filter-dropdown"
+                  style={{ width: "min(380px, calc(100vw - 32px))" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <Filter size={16} color="#3b5bdb" />
+                      <strong style={{ fontSize: 14, color: "#0f172a" }}>
+                        Filter Transactions
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFilterCard(false);
+                        setOpenControl(null);
+                      }}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: 4,
+                        display: "flex",
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+                    <CustomSelect
+                      label="Type"
+                      value={filters.type}
+                      options={typeOptions}
+                      onChange={(value) => updateFilter("type", value)}
+                      isOpen={openControl === "type"}
+                      onOpenChange={(isOpen) =>
+                        setOpenControl(isOpen ? "type" : null)
+                      }
+                      zIndex={75}
+                    />
+
+                    <CustomSelect
+                      label="Account"
+                      value={filters.accountId}
+                      options={accountOptions}
+                      onChange={(value) => updateFilter("accountId", value)}
+                      isOpen={openControl === "account"}
+                      onOpenChange={(isOpen) =>
+                        setOpenControl(isOpen ? "account" : null)
+                      }
+                      zIndex={74}
+                    />
+
+                    <CustomSelect
+                      label="Category"
+                      value={filters.category}
+                      options={categoryOptions}
+                      onChange={(value) => updateFilter("category", value)}
+                      isOpen={openControl === "category"}
+                      onOpenChange={(isOpen) =>
+                        setOpenControl(isOpen ? "category" : null)
+                      }
+                      zIndex={73}
+                    />
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 10,
+                      }}
+                    >
+                      <DatePicker
+                        label="Start Date"
+                        value={filters.startDate}
+                        onChange={(value) => updateFilter("startDate", value)}
+                        maxDate={filters.endDate || undefined}
+                        isOpen={openControl === "start"}
+                        onOpenChange={(isOpen) =>
+                          setOpenControl(isOpen ? "start" : null)
+                        }
+                        align="left"
+                      />
+                      <DatePicker
+                        label="End Date"
+                        value={filters.endDate}
+                        onChange={(value) => updateFilter("endDate", value)}
+                        minDate={filters.startDate || undefined}
+                        isOpen={openControl === "end"}
+                        onOpenChange={(isOpen) =>
+                          setOpenControl(isOpen ? "end" : null)
+                        }
+                        align="right"
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      borderTop: "1px solid #e8ecff",
+                      paddingTop: 12,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ flex: 1, borderRadius: 12 }}
+                      onClick={() => {
+                        setOpenControl(null);
+                        applyFilters();
+                      }}
+                    >
+                      Apply Filters
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ borderRadius: 12 }}
+                      onClick={() => {
+                        setOpenControl(null);
+                        clearFilters();
+                      }}
+                      disabled={
+                        activeFilterCount === 0 &&
+                        !filters.type &&
+                        !filters.accountId &&
+                        !filters.category &&
+                        !filters.startDate &&
+                        !filters.endDate
+                      }
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
         </header>
@@ -1683,301 +1947,73 @@ function Transactions() {
           }
         `}</style>
 
-        {/* FILTERS */}
 
-        <section className="panel transactions-filter-panel">
 
-          <div className="panel-header">
+        {loading ? (
+          <Loader message="Loading transactions..." fullScreen={false} />
+        ) : (
+          <>
+            {/* SUMMARY */}
 
-            <div>
-
-              <h2>
-                Filters
-              </h2>
-
-              <p>
-                Filter your
-                transactions
-              </p>
-
-            </div>
-
-            <Search size={21} />
-
-          </div>
-
-          <div className="form-row">
-
-            <div className="form-field">
-
-              <label>
-                Type
-              </label>
-
-              <select
-                value={
-                  filters.type
-                }
-                onChange={(event) =>
-                  updateFilter(
-                    "type",
-                    getEventValue(
-                      event
-                    )
-                  )
-                }
-              >
-
-                <option value="">
-                  All Types
-                </option>
-
-                <option value="income">
-                  Income
-                </option>
-
-                <option value="expense">
-                  Expense
-                </option>
-
-              </select>
-
-            </div>
-
-            <div className="form-field">
-
-              <label>
-                Account
-              </label>
-
-              <select
-                value={
-                  filters.accountId
-                }
-                onChange={(event) =>
-                  updateFilter(
-                    "accountId",
-                    getEventValue(
-                      event
-                    )
-                  )
-                }
-              >
-
-                <option value="">
-                  All Accounts
-                </option>
-
-                {accounts.map(
-                  (account) => (
-                    <option
-                      key={account.id}
-                      value={account.id}
-                    >
-                      {account.name}
-                    </option>
-                  )
-                )}
-
-              </select>
-
-            </div>
-
-            <div className="form-field">
-
-              <label>
-                Category
-              </label>
-
-              <select
-                value={
-                  filters.category
-                }
-                onChange={(event) =>
-                  updateFilter(
-                    "category",
-                    getEventValue(
-                      event
-                    )
-                  )
-                }
-              >
-
-                <option value="">
-                  All Categories
-                </option>
-
-                {categories
-                  .filter((category) =>
-                    filters.type
-                      ? category.type === filters.type ||
-                        category.type === "both"
-                      : true
-                  )
-                  .map((category) => (
-                    <option
-                      key={category.id}
-                      value={category.name}
-                    >
-                      {getCategoryLabel(category)}
-                    </option>
-                  ))}
-
-              </select>
-
-            </div>
-
-          </div>
-
-          <div className="form-row">
-
-            <div className="form-field">
-              <DatePicker
-                label="Start Date"
-                value={filters.startDate}
-                onChange={(value) =>
-                  updateFilter("startDate", value)
-                }
-                maxDate={filters.endDate || undefined}
-              />
-            </div>
-
-            <div className="form-field">
-              <DatePicker
-                label="End Date"
-                value={filters.endDate}
-                onChange={(value) =>
-                  updateFilter("endDate", value)
-                }
-                minDate={filters.startDate || undefined}
-              />
-            </div>
-
-            <div className="filter-actions">
-
-              <button
-                type="button"
-                className="primary-button"
-                onClick={
-                  applyFilters
-                }
-              >
-                <Search size={17} />
-
-                Apply Filters
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={
-                  clearFilters
-                }
-              >
-                Clear
-              </button>
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* SUMMARY */}
-
-        <section className="stats-grid">
+            <section className="stats-grid">
 
           <div className="stat-card">
-
             <div className="stat-card-top">
-
-              <div>
-
-                <p className="stat-label">
-                  Total Records
-                </p>
-
-                <h2>
-                  {totalRecords}
-                </h2>
-
-              </div>
-
+              <p className="stat-label">
+                Total Records
+              </p>
               <div className="stat-icon blue-icon">
-                <Wallet size={22} />
+                <Wallet size={18} />
               </div>
-
             </div>
+
+            <h2>
+              {totalRecords}
+            </h2>
 
             <p className="stat-description">
-              Matching transactions
+              Total recorded transactions
             </p>
-
           </div>
 
           <div className="stat-card">
-
             <div className="stat-card-top">
-
-              <div>
-
-                <p className="stat-label">
-                  Page Income
-                </p>
-
-                <h2 className="income-value">
-                  {formatMoney(
-                    pageIncome
-                  )}
-                </h2>
-
-              </div>
-
+              <p className="stat-label">
+                Income
+              </p>
               <div className="stat-icon green-icon">
-                <ArrowUpRight
-                  size={22}
-                />
+                <ArrowUpRight size={18} />
               </div>
-
             </div>
+
+            <h2 className="income-value">
+              {formatMoney(pageIncome)}
+            </h2>
 
             <p className="stat-description">
               Income on this page
             </p>
-
           </div>
 
           <div className="stat-card">
-
             <div className="stat-card-top">
-
-              <div>
-
-                <p className="stat-label">
-                  Page Expense
-                </p>
-
-                <h2 className="expense-value">
-                  {formatMoney(
-                    pageExpense
-                  )}
-                </h2>
-
-              </div>
-
+              <p className="stat-label">
+                Expense
+              </p>
               <div className="stat-icon red-icon">
-                <ArrowDownRight
-                  size={22}
-                />
+                <ArrowDownRight size={18} />
               </div>
-
             </div>
+
+            <h2 className="expense-value">
+              {formatMoney(pageExpense)}
+            </h2>
 
             <p className="stat-description">
               Expenses on this page
             </p>
-
           </div>
+
 
         </section>
 
@@ -2208,39 +2244,103 @@ function Transactions() {
           )}
 
           {totalPages > 1 && (
-  <div className="pagination-container">
-    <button
-      type="button"
-      className="pagination-btn"
-      disabled={page <= 1}
-      onClick={() =>
-        setPage((previous) => Math.max(1, previous - 1))
-      }
-    >
-      ← Previous
-    </button>
+            <div
+              className="pagination-container"
+              role="navigation"
+              aria-label="Pagination"
+              style={{
+                marginBottom: isGoToOpen ? 95 : 12,
+                transition: "margin-bottom 0.2s ease",
+              }}
+            >
+              <button
+                type="button"
+                className="pagination-btn pagination-arrow-btn"
+                disabled={page <= 1}
+                onClick={() => setPage((previous) => Math.max(1, previous - 1))}
+                aria-label="Previous page"
+                title="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
 
-    <div className="pagination-info">
-      <span className="page-label">Page</span>
-      <span className="page-number">{page}</span>
-      <span className="page-label">of</span>
-      <span className="page-total">{totalPages}</span>
-    </div>
+              <div className="pagination-pages">
+                {paginationItems.map((item, idx) => {
+                  if (typeof item === "string") {
+                    return (
+                      <span
+                        key={`${item}-${idx}`}
+                        className="pagination-ellipsis"
+                        aria-hidden="true"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`pagination-btn pagination-page-btn ${item === page ? "active" : ""}`}
+                      onClick={() => setPage(item)}
+                      aria-current={item === page ? "page" : undefined}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
 
-    <button
-      type="button"
-      className="pagination-btn"
-      disabled={page >= totalPages}
-      onClick={() =>
-        setPage((previous) => Math.min(totalPages, previous + 1))
-      }
-    >
-      Next →
-    </button>
-  </div>
-)}
+              <button
+                type="button"
+                className="pagination-btn pagination-arrow-btn"
+                disabled={page >= totalPages}
+                onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
+                aria-label="Next page"
+                title="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+
+              <div className="pagination-divider" aria-hidden="true" />
+
+              <div className="pagination-goto">
+                <span className="pagination-goto-label">Go to:</span>
+                <div style={{ width: 72 }}>
+                  <CustomSelect
+                    value={String(goToPage)}
+                    options={pageSelectOptions}
+                    onChange={(val) => {
+                      const nextPage = Number(val);
+                      setGoToPage(nextPage);
+                      setPage(nextPage);
+                    }}
+                    onOpenChange={setIsGoToOpen}
+                    minHeight={38}
+                    borderRadius={8}
+                    menuPlacement="bottom"
+                    menuWidth={78}
+                    menuMaxHeight={115}
+                    zIndex={90}
+                    buttonStyle={{
+                      height: 38,
+                      minHeight: 38,
+                      padding: "0 10px 0 12px",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
         </section>
+          </>
+        )}
 
       </div>
 

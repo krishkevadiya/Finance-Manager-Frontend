@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 
 import api from "../api/axios";
+import Loader from "../components/common/Loader";
+import CustomSelect, { SelectOption } from "../components/common/CustomSelect";
 
 type CategoryType = "income" | "expense" | "both";
 
@@ -67,9 +69,11 @@ function Categories() {
       type: "expense",
     });
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      }
       setError("");
 
       const response =
@@ -83,12 +87,14 @@ function Categories() {
         "Unable to load categories. Please try again."
       );
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    void fetchCategories();
+    void fetchCategories(true);
   }, []);
 
   const openCreateModal = () => {
@@ -305,26 +311,32 @@ function Categories() {
   );
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Categories</h1>
+    <main className="dashboard-page">
+      <div className="dashboard-container">
+        <header className="dashboard-header">
+          <div>
+            <p className="eyebrow">
+              Finance Management
+            </p>
 
-          <p>
-            Manage all your income and expense
-            categories in one place.
-          </p>
-        </div>
+            <h1>Categories</h1>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={openCreateModal}
-        >
-          <Plus size={17} />
-          Add Category
-        </button>
-      </div>
+            <p className="page-subtitle">
+              Manage all your income and expense categories in one place.
+            </p>
+          </div>
+
+          <div className="header-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openCreateModal}
+            >
+              <Plus size={18} />
+              Add Category
+            </button>
+          </div>
+        </header>
 
       {error && (
         <div className="alert alert-error">
@@ -339,9 +351,7 @@ function Categories() {
       )}
 
       {loading ? (
-        <div className="empty-state">
-          <p>Loading categories...</p>
-        </div>
+        <Loader message="Loading categories..." fullScreen={false} />
       ) : (
         <section className="category-section">
           <div className="category-section-header">
@@ -396,6 +406,9 @@ function Categories() {
                               ? "both"
                               : "expense"
                           }`}
+                           style={{
+                            margin: "8px",
+                          }}
                         />
 
                         <div>
@@ -408,7 +421,7 @@ function Categories() {
                               color: isIncome
                                 ? "#059669"
                                 : isBoth
-                                ? "#2563eb"
+                                ? "#3b5bdb"
                                 : "#dc2626",
                               fontWeight: 600,
                             }}
@@ -526,21 +539,27 @@ function Categories() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="category-type">
+                <label>
                   Category Type
                 </label>
 
-                <select
-                  id="category-type"
-                  name="type"
+                <CustomSelect
                   value={form.type}
-                  onChange={handleTypeChange}
+                  options={[
+                    { value: "expense", label: "Expense" },
+                    { value: "income", label: "Income" },
+                  ]}
+                  onChange={(val) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      type: val as CategoryType,
+                    }))
+                  }
                   disabled={saving}
-                >
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                  {/* <option value="both">Income &amp; Expense</option> */}
-                </select>
+                  minHeight={46}
+                  borderRadius={10}
+                  zIndex={1200}
+                />
               </div>
 
               <div className="modal-actions">
@@ -569,7 +588,8 @@ function Categories() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </main>
   );
 }
 

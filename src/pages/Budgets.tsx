@@ -2,24 +2,49 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import {
+  AlertTriangle,
   ArrowLeft,
+  Beef,
+  BookOpen,
   CalendarDays,
+  Car,
+  CheckCircle2,
+  CreditCard,
   Edit3,
+  Flame,
+  Gamepad2,
+  GraduationCap,
+  Heart,
+  Home,
+  Laptop,
+  Plane,
   Plus,
   RefreshCw,
+  ShoppingBag,
+  ShoppingCart,
+  Smartphone,
+  Stethoscope,
   Target,
   Trash2,
+  TrendingUp,
+  Tv,
+  Utensils,
   WalletCards,
+  Wifi,
   X,
+  Zap,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
 import api from "../api/axios";
+import Loader from "../components/common/Loader";
+import CustomSelect, { SelectOption } from "../components/common/CustomSelect";
 
 type CategoryType = "income" | "expense";
 
@@ -88,6 +113,11 @@ const MONTHS = [
   "November",
   "December",
 ];
+
+const MONTH_OPTIONS: SelectOption[] = MONTHS.map((month, index) => ({
+  value: String(index + 1),
+  label: month,
+}));
 
 const INITIAL_FORM: BudgetForm = {
   categoryId: "",
@@ -181,6 +211,35 @@ function browserConfirm(
   return true;
 }
 
+type IconComponent = React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+
+function getCategoryIcon(name: string): IconComponent {
+  const n = (name ?? "").toLowerCase();
+
+  if (/food|eat|restaurant|dining|meal|lunch|dinner|breakfast|snack/.test(n)) return Utensils;
+  if (/grocery|groceries|supermarket|market/.test(n)) return ShoppingCart;
+  if (/transport|cab|taxi|uber|ola|bus|metro|fuel|petrol|diesel|commut/.test(n)) return Car;
+  if (/flight|travel|trip|vacation|holiday|hotel|tour/.test(n)) return Plane;
+  if (/rent|house|home|mortgage|property|apartment/.test(n)) return Home;
+  if (/electric|electricity|power|utility|utilities|bill|water|gas/.test(n)) return Zap;
+  if (/internet|wifi|broadband|data|mobile data/.test(n)) return Wifi;
+  if (/phone|mobile|telecom/.test(n)) return Smartphone;
+  if (/health|medical|doctor|hospital|medicine|pharmacy|clinic/.test(n)) return Stethoscope;
+  if (/gym|fitness|sport|exercise|workout/.test(n)) return Heart;
+  if (/education|school|college|course|study|tuition|learning/.test(n)) return GraduationCap;
+  if (/book|library|read|novel/.test(n)) return BookOpen;
+  if (/shopping|cloth|apparel|fashion|outfit|wear/.test(n)) return ShoppingBag;
+  if (/entertain|movie|cinema|stream|netflix|prime|ott|show|event/.test(n)) return Tv;
+  if (/game|gaming|play/.test(n)) return Gamepad2;
+  if (/laptop|computer|tech|device|gadget/.test(n)) return Laptop;
+  if (/credit|card|emi|loan|payment/.test(n)) return CreditCard;
+  if (/invest|stock|mutual|fund/.test(n)) return TrendingUp;
+  if (/meat|chicken|beef|mutton/.test(n)) return Beef;
+  if (/fire|emergency|urgent/.test(n)) return Flame;
+
+  return WalletCards;
+}
+
 function Budgets() {
   const navigate = useNavigate();
 
@@ -199,6 +258,9 @@ function Budgets() {
     useState(
       String(currentDate.getFullYear())
     );
+
+  const [showFilterCard, setShowFilterCard] =
+    useState(false);
 
   const [showModal, setShowModal] =
     useState(false);
@@ -308,11 +370,12 @@ function Budgets() {
   const fetchBudgets =
     useCallback(
       async (
-        showRefreshing = false
+        showRefreshing = false,
+        isInitial = false
       ) => {
         if (showRefreshing) {
           setRefreshing(true);
-        } else {
+        } else if (isInitial) {
           setLoading(true);
         }
 
@@ -347,7 +410,7 @@ function Budgets() {
         } finally {
           if (showRefreshing) {
             setRefreshing(false);
-          } else {
+          } else if (isInitial) {
             setLoading(false);
           }
         }
@@ -355,12 +418,19 @@ function Budgets() {
       [filterMonth, filterYear]
     );
 
+  const isFirstMount = useRef(true);
+
   useEffect(() => {
     void fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
-    void fetchBudgets();
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      void fetchBudgets(false, true);
+    } else {
+      void fetchBudgets(false, false);
+    }
   }, [fetchBudgets]);
 
   const openCreate = () => {
@@ -595,44 +665,12 @@ function Budgets() {
     ]);
   };
 
-  if (loading) {
-    return (
-      <main className="dashboard-loading">
-        <div className="loading-box">
-          <RefreshCw
-            size={22}
-            className="spin"
-          />
-
-          <span>
-            Loading budgets...
-          </span>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <>
       <main className="dashboard-page">
         <div className="dashboard-container">
           <header className="dashboard-header">
             <div>
-              <button
-                type="button"
-                className="back-button"
-                onClick={() =>
-                  navigate(
-                    "/dashboard"
-                  )
-                }
-              >
-                <ArrowLeft
-                  size={17}
-                />
-                Back to Dashboard
-              </button>
-
               <p className="eyebrow">
                 Finance Management
               </p>
@@ -640,27 +678,117 @@ function Budgets() {
               <h1>Budgets</h1>
 
               <p className="page-subtitle">
-                Set and manage monthly
-                spending limits for
-                your expense
-                categories.
+                Set and manage monthly spending limits for your expense categories.
               </p>
             </div>
 
             <div className="header-actions">
-              
               <button
                 type="button"
-                className="primary-button"
-                onClick={openCreate}
-                disabled={
-                  expenseCategories.length ===
-                  0
-                }
+                className="header-filter-btn"
+                onClick={() => setShowFilterCard((prev) => !prev)}
+                aria-label="Filter by month and year"
               >
-                <Plus size={18} />
+                <CalendarDays size={14} />
+                <span>
+                  {selectedMonthName} {filterYear}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="primary-button compact-btn"
+                onClick={openCreate}
+                disabled={expenseCategories.length === 0}
+              >
+                <Plus size={16} />
                 Add Budget
               </button>
+
+              {showFilterCard && (
+                <>
+                  <div
+                    className="header-filter-backdrop"
+                    onClick={() => setShowFilterCard(false)}
+                  />
+                  <div className="header-filter-dropdown" style={{ width: 300 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 14,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <CalendarDays size={16} color="#3b5bdb" />
+                        <strong style={{ fontSize: 14, color: "#0f172a" }}>
+                          Select Period
+                        </strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowFilterCard(false)}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          color: "#94a3b8",
+                          cursor: "pointer",
+                          padding: 4,
+                          display: "flex",
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+                      <CustomSelect
+                        label="Month"
+                        value={filterMonth}
+                        options={MONTH_OPTIONS}
+                        onChange={(val) => setFilterMonth(val)}
+                        zIndex={75}
+                      />
+
+                      <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>
+                          Year
+                        </span>
+                        <input
+                          type="number"
+                          min={2000}
+                          max={2100}
+                          value={filterYear}
+                          onChange={(event) => {
+                            setFilterYear(readValue(event));
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 12,
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontSize: 13,
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ width: "100%", borderRadius: 12 }}
+                      onClick={() => setShowFilterCard(false)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </header>
 
@@ -686,259 +814,87 @@ function Budgets() {
             </div>
           )}
 
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <h2>
-                    Filter Budgets
-                  </h2>
-
-                  <p>
-                    Filter budgets by month and year.
-                  </p>
-              </div>
-
-              <CalendarDays
-                size={22}
-                className="panel-header-icon"
-              />
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "minmax(180px, 1fr) minmax(140px, 180px)",
-                gap: 14,
-                alignItems: "end",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection:
-                    "column",
-                  gap: 7,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color:
-                      "#475569",
-                  }}
-                >
-                  Month
-                </span>
-
-                <select
-                  value={filterMonth}
-                  onChange={(event) =>
-                    setFilterMonth(
-                      readValue(event)
-                    )
-                  }
-                  style={{
-                    width:
-                      "100%",
-                    padding:
-                      "12px 14px",
-                    border:
-                      "1px solid #dbe3ee",
-                    borderRadius:
-                      10,
-                    background:
-                      "#fff",
-                    color:
-                      "#0f172a",
-                    fontSize: 14,
-                    outline:
-                      "none",
-                  }}
-                >
-                  {MONTHS.map(
-                    (
-                      month,
-                      index
-                    ) => (
-                      <option
-                        key={month}
-                        value={
-                          index + 1
-                        }
-                      >
-                        {month}
-                      </option>
-                    )
-                  )}
-                </select>
-              </label>
-
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection:
-                    "column",
-                  gap: 7,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color:
-                      "#475569",
-                  }}
-                >
-                  Year
-                </span>
-
-                <input
-                  type="number"
-                  min={2000}
-                  max={2100}
-                  value={filterYear}
-                  onChange={(event) =>
-                    setFilterYear(
-                      readValue(event)
-                    )
-                  }
-                  style={{
-                    width:
-                      "100%",
-                    padding:
-                      "12px 14px",
-                    border:
-                      "1px solid #dbe3ee",
-                    borderRadius:
-                      10,
-                    background:
-                      "#fff",
-                    color:
-                      "#0f172a",
-                    fontSize: 14,
-                    outline:
-                      "none",
-                    boxSizing:
-                      "border-box",
-                  }}
-                />
-              </label>
-            </div>
-          </section>
-
-          <section className="stats-grid">
+        {loading ? (
+          <Loader message="Loading budgets..." fullScreen={false} />
+        ) : (
+          <>
+            <section className="stats-grid">
             <div className="stat-card">
               <div className="stat-card-top">
-                <div>
-                  <p className="stat-label">
-                    Total Budget
-                  </p>
-
-                  <h2
-                    style={{
-                      color: "#2563eb",
-                    }}
-                  >
-                    {formatCurrency(
-                      totalBudget
-                    )}
-                  </h2>
-                </div>
-
-                <div className="stat-icon">
-                  <WalletCards
-                    size={21}
-                  />
+                <p className="stat-label">
+                  Total Budget
+                </p>
+                <div className="stat-icon blue-icon">
+                  <WalletCards size={18} />
                 </div>
               </div>
 
-              <p className="stat-description">
-                Planned spending for{" "}
-                {selectedMonthName}{" "}
-                {filterYear}
+              <h2 style={{ color: "#3b5bdb" }} title={formatCurrency(totalBudget)}>
+                {formatCurrency(totalBudget)}
+              </h2>
+
+              <p className="stat-description" title={`Planned for ${selectedMonthName} ${filterYear}`}>
+                Planned for {selectedMonthName} {filterYear}
               </p>
             </div>
 
             <div className="stat-card">
               <div className="stat-card-top">
-                <div>
-                  <p className="stat-label">
-                    Budget Categories
-                  </p>
-
-                  <h2
-                    style={{
-                      color: "#0f172a",
-                    }}
-                  >
-                    {budgets.length}
-                  </h2>
-                </div>
-
-                <div className="stat-icon">
-                  <Target size={21} />
+                <p className="stat-label">
+                  Budget Categories
+                </p>
+                <div className="stat-icon purple-icon">
+                  <Target size={18} />
                 </div>
               </div>
 
-              <p className="stat-description">
-                Expense categories
-                with budgets
+              <h2 style={{ color: "#0f172a" }} title={String(budgets.length)}>
+                {budgets.length}
+              </h2>
+
+              <p className="stat-description" title="Active budgeted categories">
+                Active budgeted categories
               </p>
             </div>
 
             <div className="stat-card">
               <div className="stat-card-top">
-                <div>
-                  <p className="stat-label">
-                    Total Spent
-                  </p>
-
-                  <h2
-                    style={{
-                      color: exceededBudgets > 0 ? "#dc2626" : "#059669",
-                    }}
-                  >
-                    {formatCurrency(totalSpent)}
-                  </h2>
-                </div>
-
-                <div className="stat-icon">
-                  <WalletCards size={21} />
+                <p className="stat-label">
+                  Total Spent
+                </p>
+                <div className={`stat-icon ${totalSpent > totalBudget ? "red-icon" : "green-icon"}`}>
+                  <WalletCards size={18} />
                 </div>
               </div>
 
-              <p className="stat-description">
-                Actual expense spending for {selectedMonthName} {filterYear}
+              <h2 style={{ color: totalSpent > totalBudget ? "#dc2626" : "#059669" }} title={formatCurrency(totalSpent)}>
+                {formatCurrency(totalSpent)}
+              </h2>
+
+              <p className="stat-description" title={`Spent in ${selectedMonthName} ${filterYear}`}>
+                Spent in {selectedMonthName} {filterYear}
               </p>
             </div>
 
             <div className="stat-card">
               <div className="stat-card-top">
-                <div>
-                  <p className="stat-label">
-                    Budget Alerts
-                  </p>
-
-                  <h2
-                    style={{
-                      color: exceededBudgets > 0 ? "#dc2626" : "#059669",
-                    }}
-                  >
-                    {exceededBudgets}
-                  </h2>
-                </div>
-
-                <div className="stat-icon">
-                  <Target size={21} />
+                <p className="stat-label">
+                  Budget Alerts
+                </p>
+                <div className={`stat-icon ${exceededBudgets > 0 ? "red-icon" : "green-icon"}`}>
+                  <Target size={18} />
                 </div>
               </div>
 
-              <p className="stat-description">
-                Categories currently over budget
+              <h2 style={{ color: exceededBudgets > 0 ? "#dc2626" : "#059669" }} title={String(exceededBudgets)}>
+                {exceededBudgets}
+              </h2>
+
+              <p className="stat-description" title="Categories over budget limit">
+                Categories over budget limit
               </p>
             </div>
+
           </section>
 
           <section className="panel">
@@ -998,8 +954,8 @@ function Budgets() {
       alignItems: "center",
       justifyContent: "center",
 
-      background: "#eff6ff",
-      color: "#2563eb",
+      background: "#eaedff",
+      color: "#3b5bdb",
 
       marginBottom: 2,
     }}
@@ -1123,218 +1079,141 @@ function Budgets() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns:
-                    "repeat(auto-fill, minmax(280px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
                   gap: 16,
                 }}
               >
-                {budgets.map(
-                  (budget) => (
+                {budgets.map((budget) => {
+                  const catName = budget.category?.name ?? "";
+                  const CategoryIcon = getCategoryIcon(catName);
+                  const pct = budget.budgetStatus?.percentageUsed ?? 0;
+                  const exceeded = Boolean(budget.budgetStatus?.exceeded);
+
+                  const borderColor = exceeded
+                    ? "rgba(239,68,68,0.30)"
+                    : pct >= 80
+                    ? "rgba(249,115,22,0.28)"
+                    : "rgba(186, 215, 245,0.5)";
+
+                  const borderWidth = "1px";
+
+                  return (
                     <div
                       key={budget.id}
                       style={{
-                        border:
-                          "1px solid #e2e8f0",
-                        borderRadius:
-                          14,
+                        border: `${borderWidth} solid ${borderColor}`,
+                        borderRadius: 14,
                         padding: 20,
-                        background:
-                          "#ffffff",
-                        boxShadow:
-                          "0 4px 14px rgba(15, 23, 42, 0.04)",
+                        background: "#ffffff",
+                        boxShadow: "0 2px 12px rgba(59, 91, 219, 0.07), 0 0 0 1px rgba(186, 215, 245,0.4)",
                       }}
                     >
                       <div
                         style={{
-                          display:
-                            "flex",
-                          justifyContent:
-                            "space-between",
-                          alignItems:
-                            "flex-start",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
                           gap: 12,
-                          marginBottom:
-                            18,
+                          marginBottom: 18,
                         }}
                       >
                         <div
                           style={{
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
+                            display: "flex",
+                            alignItems: "center",
                             gap: 11,
-                            minWidth:
-                              0,
+                            minWidth: 0,
                           }}
                         >
                           <div
                             style={{
                               width: 42,
                               height: 42,
-                              borderRadius:
-                                11,
-                              display:
-                                "flex",
-                              alignItems:
-                                "center",
-                              justifyContent:
-                                "center",
-                              background:
-                                "rgba(37, 99, 235, 0.10)",
-                              color:
-                                "#2563eb",
-                              flexShrink:
-                                0,
+                              borderRadius: 11,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "#eaedff",
+                              color: "#3b5bdb",
+                              flexShrink: 0,
                             }}
                           >
-                            <Target
-                              size={19}
-                            />
+                            <CategoryIcon size={19} />
                           </div>
 
-                          <div
-                            style={{
-                              minWidth:
-                                0,
-                            }}
-                          >
+                          <div style={{ minWidth: 0 }}>
                             <h3
                               style={{
                                 margin: 0,
-                                fontSize: 16,
-                                fontWeight: 750,
+                                fontSize: 15,
+                                fontWeight: 700,
                                 color: "#0f172a",
-                                overflow:
-                                  "hidden",
-                                textOverflow:
-                                  "ellipsis",
-                                whiteSpace:
-                                  "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                               }}
                             >
-                              {budget
-                                .category
-                                ?.name ||
-                                "Category"}
+                              {budget.category?.name || "Category"}
                             </h3>
 
                             <p
                               style={{
-                                margin:
-                                  "4px 0 0",
-                                fontSize:
-                                  12,
-                                color:
-                                  "#64748b",
+                                margin: "4px 0 0",
+                                fontSize: 12,
+                                color: "#64748b",
                               }}
                             >
-                              {
-                                MONTHS[
-                                  budget
-                                    .month -
-                                    1
-                                ]
-                              }{" "}
-                              {
-                                budget.year
-                              }
+                              {MONTHS[budget.month - 1]} {budget.year}
                             </p>
                           </div>
                         </div>
 
-                        <div
-                          style={{
-                            display:
-                              "flex",
-                            gap: 5,
-                          }}
-                        >
+                        <div style={{ display: "flex", gap: 5 }}>
                           <button
                             type="button"
                             title="Edit budget"
-                            onClick={() =>
-                              openEdit(
-                                budget
-                              )
-                            }
+                            onClick={() => openEdit(budget)}
                             style={{
                               width: 34,
                               height: 34,
-                              border:
-                                "none",
-                              borderRadius:
-                                8,
-                              background:
-                                "#f8fafc",
-                              color:
-                                "#475569",
-                              display:
-                                "flex",
-                              alignItems:
-                                "center",
-                              justifyContent:
-                                "center",
-                              cursor:
-                                "pointer",
+                              border: "none",
+                              borderRadius: 8,
+                              background: "#eaedff",
+                              color: "#3b5bdb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
                             }}
                           >
-                            <Edit3
-                              size={16}
-                            />
+                            <Edit3 size={16} />
                           </button>
 
                           <button
                             type="button"
                             title="Delete budget"
-                            disabled={
-                              deletingId ===
-                              budget.id
-                            }
+                            disabled={deletingId === budget.id}
                             onClick={() => {
-                              void handleDelete(
-                                budget
-                              );
+                              void handleDelete(budget);
                             }}
                             style={{
                               width: 34,
                               height: 34,
-                              border:
-                                "none",
-                              borderRadius:
-                                8,
-                              background:
-                                "rgba(239, 68, 68, 0.08)",
-                              color:
-                                "#dc2626",
-                              display:
-                                "flex",
-                              alignItems:
-                                "center",
-                              justifyContent:
-                                "center",
-                              cursor:
-                                deletingId ===
-                                budget.id
-                                  ? "not-allowed"
-                                  : "pointer",
-                              opacity:
-                                deletingId ===
-                                budget.id
-                                  ? 0.5
-                                  : 1,
+                              border: "none",
+                              borderRadius: 8,
+                              background: "rgba(239, 68, 68, 0.08)",
+                              color: "#dc2626",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: deletingId === budget.id ? "not-allowed" : "pointer",
+                              opacity: deletingId === budget.id ? 0.5 : 1,
                             }}
                           >
-                            {deletingId ===
-                            budget.id ? (
-                              <RefreshCw
-                                size={16}
-                                className="spin"
-                              />
+                            {deletingId === budget.id ? (
+                              <RefreshCw size={16} className="spin" />
                             ) : (
-                              <Trash2
-                                size={16}
-                              />
+                              <Trash2 size={16} />
                             )}
                           </button>
                         </div>
@@ -1342,127 +1221,118 @@ function Budgets() {
 
                       <div
                         style={{
-                          borderTop:
-                            "1px solid #eef2f7",
+                          borderTop: "1px solid rgba(186, 215, 245,0.4)",
                           paddingTop: 16,
                         }}
                       >
                         <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 16,
-    alignItems: "flex-start",
-    marginBottom: 12,
-  }}
->
-  <div
-    style={{
-      minWidth: 0,
-      flex: 1,
-    }}
-  >
-    <p
-      style={{
-        margin: "0 0 6px",
-        fontSize: 12,
-        fontWeight: 650,
-        color: "#64748b",
-      }}
-    >
-      Spent / Monthly Limit
-    </p>
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 16,
+                            alignItems: "flex-start",
+                            marginBottom: 12,
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p
+                              style={{
+                                margin: "0 0 6px",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: "#6b7a9f",
+                              }}
+                            >
+                              Spent / Monthly Limit
+                            </p>
 
-    <strong
-      style={{
-        display: "block",
-        fontSize: 22,
-        lineHeight: 1.2,
-        fontWeight: 800,
-        color: budget.budgetStatus?.exceeded
-          ? "#dc2626"
-          : "#2563eb",
-      }}
-    >
-      {formatCurrency(
-        budget.budgetStatus?.spentAmount ?? 0
-      )}
+                            <strong
+                              style={{
+                                display: "block",
+                                fontSize: 15,
+                                lineHeight: 1.2,
+                                fontWeight: 700,
+                                color: exceeded ? "#dc2626" : "#3b5bdb",
+                              }}
+                            >
+                              {formatCurrency(budget.budgetStatus?.spentAmount ?? 0)}
+                              <span
+                                style={{
+                                  color: "#94a3b8",
+                                  fontWeight: 500,
+                                  fontSize: 14,
+                                }}
+                              >
+                                {" / "}
+                                {formatCurrency(budget.amount)}
+                              </span>
+                            </strong>
+                          </div>
 
-      <span
-        style={{
-          color: "#94a3b8",
-          fontWeight: 600,
-        }}
-      >
-        {" / "}
-        {formatCurrency(budget.amount)}
-      </span>
-    </strong>
-  </div>
-
-  <span
-    style={{
-      flexShrink: 0,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-
-      minWidth: 78,
-      minHeight: 34,
-      padding: "6px 10px",
-
-      boxSizing: "border-box",
-
-      borderRadius: 10,
-
-      fontSize: 11,
-      lineHeight: 1.15,
-      fontWeight: 800,
-      textAlign: "center",
-      letterSpacing: "0.1px",
-
-      color: budget.budgetStatus?.exceeded
-        ? "#b91c1c"
-        : "#047857",
-
-      background: budget.budgetStatus?.exceeded
-        ? "#fff1f2"
-        : "#ecfdf5",
-
-      border: `1px solid ${
-        budget.budgetStatus?.exceeded
-          ? "#fecdd3"
-          : "#a7f3d0"
-      }`,
-    }}
-  >
-    {budget.budgetStatus?.exceeded ? (
-      <>
-        <span>Over</span>
-        <span>&nbsp;Budget</span>
-      </>
-    ) : (
-      `${Math.round(
-        budget.budgetStatus?.percentageUsed ?? 0
-      )}% Used`
-    )}
-  </span>
-</div>
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minWidth: 72,
+                              minHeight: 30,
+                              padding: "5px 10px",
+                              boxSizing: "border-box",
+                              borderRadius: 999,
+                              fontSize: 11,
+                              lineHeight: 1.15,
+                              fontWeight: 700,
+                              textAlign: "center",
+                              letterSpacing: "0.3px",
+                              color: exceeded
+                                ? "#b91c1c"
+                                : pct >= 80
+                                ? "#92400e"
+                                : "#065f46",
+                              background: exceeded
+                                ? "#fef2f2"
+                                : pct >= 80
+                                ? "#fffbeb"
+                                : "#f0fdf4",
+                              border: `1px solid ${
+                                exceeded
+                                  ? "rgba(239,68,68,0.25)"
+                                  : pct >= 80
+                                  ? "rgba(217,119,6,0.25)"
+                                  : "rgba(16,185,129,0.25)"
+                              }`,
+                            }}
+                          >
+                            {exceeded ? (
+                              <>
+                                <span>Over</span>
+                                <span>&nbsp;Budget</span>
+                              </>
+                            ) : (
+                              `${Math.round(pct)}% Used`
+                            )}
+                          </span>
+                        </div>
 
                         <div
                           style={{
-                            height: 8,
+                            height: 6,
                             borderRadius: 999,
-                            background: "#e2e8f0",
+                            background: "#e8ecff",
                             overflow: "hidden",
                           }}
                         >
                           <div
                             style={{
-                              width: `${Math.min(budget.budgetStatus?.percentageUsed ?? 0, 100)}%`,
+                              width: `${Math.min(pct, 100)}%`,
                               height: "100%",
                               borderRadius: 999,
-                              background: budget.budgetStatus?.exceeded ? "#dc2626" : "#2563eb",
+                              background: exceeded
+                                ? "#f87171"
+                                : pct >= 80
+                                ? "#fb923c"
+                                : "#3b5bdb",
                               transition: "width 0.3s ease",
                             }}
                           />
@@ -1472,23 +1342,26 @@ function Budgets() {
                           style={{
                             margin: "9px 0 0",
                             fontSize: 12,
-                            fontWeight: 650,
-                            color: budget.budgetStatus?.exceeded ? "#b91c1c" : "#64748b",
+                            fontWeight: 500,
+                            color: exceeded ? "#ef4444" : "#6b7a9f",
                           }}
                         >
-                          {budget.budgetStatus?.exceeded
-                            ? `Exceeded by ${formatCurrency(budget.budgetStatus.exceededBy)}`
+                          {exceeded
+                            ? `Exceeded by ${formatCurrency(budget.budgetStatus?.exceededBy ?? 0)}`
                             : `${formatCurrency(Math.max(budget.budgetStatus?.remainingAmount ?? 0, 0))} remaining`}
                         </p>
                       </div>
                     </div>
-                  )
-                )}
+                  );
+                })}
               </div>
             )}
           </section>
+          </>
+        )}
         </div>
       </main>
+
 
       {showModal && (
         <div

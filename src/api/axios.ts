@@ -8,10 +8,19 @@ const getApiBaseUrl = (): string => {
     };
   };
 
-  return (
-    environment.env?.VITE_API_BASE_URL ||
-    "https://finance-manager-backend-qmw1.onrender.com/api"
-  );
+  if (environment.env?.VITE_API_BASE_URL) {
+    return environment.env.VITE_API_BASE_URL;
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1")
+  ) {
+    return "http://localhost:5000/api";
+  }
+
+  return "https://finance-manager-backend-qmw1.onrender.com/api";
 };
 
 const api = axios.create({

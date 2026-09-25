@@ -1,19 +1,20 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
+
 import {
   ArrowLeft,
   ArrowRight,
   CreditCard,
   Edit3,
+  Filter,
   Landmark,
   MoreVertical,
   Plus,
   Search,
-  SlidersHorizontal,
   RefreshCw,
   Trash2,
   TrendingUp,
@@ -22,6 +23,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import Loader from "../components/common/Loader";
+import CustomSelect, { SelectOption } from "../components/common/CustomSelect";
 
 type AccountType =
   | "cash"
@@ -85,6 +88,15 @@ const ACCOUNT_TYPE_LABELS: Record<
   investment: "Investment",
   other: "Other",
 };
+
+const ACCOUNT_TYPE_OPTIONS: SelectOption[] = [
+  { value: "", label: "All Types" },
+  { value: "bank", label: "Bank" },
+  { value: "cash", label: "Cash" },
+  { value: "credit_card", label: "Credit Card" },
+  { value: "investment", label: "Investment" },
+  { value: "other", label: "Other" },
+];
 
 function toNumber(
   value: number | string | undefined | null
@@ -231,13 +243,40 @@ function Accounts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] =
     useState<AccountType | "">("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedType, setAppliedType] =
+    useState<AccountType | "">("");
+  const [showFilters, setShowFilters] = useState(false);
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedSearch.trim()) count++;
+    if (appliedType) count++;
+    return count;
+  }, [appliedSearch, appliedType]);
+
+  const applyFilters = () => {
+    setAppliedSearch(searchTerm);
+    setAppliedType(typeFilter);
+    setShowFilters(false);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("");
+    setAppliedSearch("");
+    setAppliedType("");
+    setShowFilters(false);
+  };
   /*
    * GET ACCOUNTS
    */
   const fetchAccounts =
-    useCallback(async () => {
+    useCallback(async (isInitial = false) => {
       try {
+        if (isInitial) {
+          setLoading(true);
+        }
         setError("");
 
         const response =
@@ -258,7 +297,9 @@ function Accounts() {
           getErrorMessage(requestError)
         );
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+        }
         setRefreshing(false);
       }
     }, []);
@@ -267,7 +308,7 @@ function Accounts() {
    * INITIAL LOAD
    */
   useEffect(() => {
-    void fetchAccounts();
+    void fetchAccounts(true);
   }, [fetchAccounts]);
 
   /*
@@ -282,14 +323,14 @@ function Accounts() {
   }, [accounts]);
 
   const filteredAccounts = useMemo(() => {
-    const normalizedSearch = searchTerm
+    const normalizedSearch = appliedSearch
       .trim()
       .toLowerCase();
 
     return accounts.filter((account) => {
       const matchesType =
-        !typeFilter ||
-        account.type === typeFilter;
+        !appliedType ||
+        account.type === appliedType;
 
       const matchesSearch =
         !normalizedSearch ||
@@ -305,7 +346,7 @@ function Accounts() {
 
       return matchesType && matchesSearch;
     });
-  }, [accounts, searchTerm, typeFilter]);
+  }, [accounts, appliedSearch, appliedType]);
 
   const accountTypeCounts = useMemo(() => {
     return ACCOUNT_TYPES.reduce(
@@ -572,49 +613,15 @@ function Accounts() {
     void fetchAccounts();
   };
 
-  /*
-   * LOADING
-   */
-  if (loading) {
-    return (
-      <main className="dashboard-loading">
-        <div className="loading-box">
-          <RefreshCw
-            size={22}
-            className="loading-icon"
-          />
-
-          <span>
-            Loading accounts...
-          </span>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="dashboard-page">
       <div className="dashboard-container">
 
         {/* HEADER */}
 
-        <header className="dashboard-header accounts-header">
+        <header className="dashboard-header">
 
           <div>
-
-            <button
-              type="button"
-              className="back-button"
-              onClick={() =>
-                navigate(
-                  "/dashboard"
-                )
-              }
-            >
-              <ArrowLeft size={17} />
-
-              Back to Dashboard
-            </button>
 
             <p className="eyebrow">
               Finance Management
@@ -625,27 +632,175 @@ function Accounts() {
             </h1>
 
             <p className="page-subtitle">
-              Manage your financial
-              accounts and balances
+              Manage your financial accounts and balances
             </p>
 
           </div>
 
           <div className="header-actions">
-
+            <button
+              type="button"
+              className={`header-filter-btn ${activeFilterCount > 0 ? "active" : ""}`}
+              onClick={() => {
+                if (!showFilters) {
+                  setSearchTerm(appliedSearch);
+                  setTypeFilter(appliedType);
+                }
+                setShowFilters((prev) => !prev);
+              }}
+              aria-label="Filter accounts"
+            >
+              <Filter size={14} />
+              <span>
+                {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters"}
+              </span>
+              {activeFilterCount > 0 && (
+                <span className="filter-active-dot" />
+              )}
+            </button>
 
             <button
               type="button"
-              className="primary-button"
-              onClick={
-                openCreateModal
-              }
+              className="primary-button compact-btn"
+              onClick={openCreateModal}
             >
-              <Plus size={18} />
-
+              <Plus size={16} />
               Add Account
             </button>
 
+            {showFilters && (
+              <>
+                <div
+                  className="header-filter-backdrop"
+                  onClick={() => setShowFilters(false)}
+                />
+                <div
+                  className="header-filter-dropdown"
+                  style={{ width: "min(360px, calc(100vw - 32px))" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <Filter size={16} color="#3b5bdb" />
+                      <strong style={{ fontSize: 14, color: "#0f172a" }}>
+                        Filter Accounts
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowFilters(false)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: 4,
+                        display: "flex",
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: 5,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "#475569",
+                        }}
+                      >
+                        Search
+                      </label>
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Search
+                          size={15}
+                          style={{
+                            position: "absolute",
+                            left: 10,
+                            color: "#94a3b8",
+                            pointerEvents: "none",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Search by account name, type..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(getEventValue(e))}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px 10px 34px",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 12,
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontSize: 13,
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <CustomSelect
+                      label="Account Type"
+                      value={typeFilter}
+                      options={ACCOUNT_TYPE_OPTIONS}
+                      onChange={(value) =>
+                        setTypeFilter(value as AccountType | "")
+                      }
+                      zIndex={75}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      borderTop: "1px solid #e8ecff",
+                      paddingTop: 12,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ flex: 1, borderRadius: 12 }}
+                      onClick={applyFilters}
+                    >
+                      Apply Filters
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ borderRadius: 12 }}
+                      onClick={clearFilters}
+                      disabled={
+                        activeFilterCount === 0 &&
+                        !searchTerm &&
+                        !typeFilter
+                      }
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
         </header>
@@ -673,143 +828,13 @@ function Accounts() {
           </div>
         )}
 
-        {/* ACCOUNT FILTERS */} 
- 
-            <section className="panel"> 
-              <div className="panel-header"> 
-                <div> 
-                  <h2>Find an Account</h2> 
-                  <p> 
-                    Search and filter your accounts 
-                  </p> 
-                </div> 
- 
-                <SlidersHorizontal 
-                  size={21} 
-                  className="panel-header-icon" 
-                /> 
-              </div> 
- 
-              <div 
-                style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: 
-                    "minmax(220px, 1fr) minmax(180px, 240px)", 
-                  gap: 14, 
-                  alignItems: "end", 
-                }} 
-              > 
-                <div className="form-field"> 
-                  <label htmlFor="account-search"> 
-                    Search 
-                  </label> 
- 
-                  <div 
-                    style={{ 
-                      position: "relative", 
-                    }} 
-                  > 
-                    <Search 
-                      size={17} 
-                      style={{ 
-                        position: "absolute", 
-                        left: 13, 
-                        top: "50%", 
-                        transform: "translateY(-50%)", 
-                        color: "#94a3b8", 
-                        pointerEvents: "none", 
-                      }} 
-                    /> 
- 
-                    <input 
-                      id="account-search" 
-                      type="text" 
-                      value={searchTerm} 
-                      onChange={(event) => 
-                        setSearchTerm( 
-                          getEventValue(event) 
-                        ) 
-                      } 
-                      placeholder="Search by account name, type..." 
-                      style={{ 
-                        paddingLeft: 40, 
-                      }} 
-                    /> 
-                  </div> 
-                </div> 
- 
-                <div className="form-field"> 
-                  <label htmlFor="account-type-filter"> 
-                    Account Type 
-                  </label> 
- 
-                  <select 
-                    id="account-type-filter" 
-                    value={typeFilter} 
-                    onChange={(event) => { 
-                      const value = 
-                        getEventValue(event); 
- 
-                      setTypeFilter( 
-                        value as AccountType | "" 
-                      ); 
-                    }} 
-                  > 
-                    <option value=""> 
-                      All Types 
-                    </option> 
- 
-                    {ACCOUNT_TYPES.map((type) => ( 
-                      <option 
-                        key={type} 
-                        value={type} 
-                      > 
-                        {ACCOUNT_TYPE_LABELS[type]} ( 
-                        {accountTypeCounts[type]}) 
-                      </option> 
-                    ))} 
-                  </select> 
-                </div> 
-              </div> 
- 
-              {(searchTerm || typeFilter) && ( 
-                <div 
-                  style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center", 
-                    gap: 12, 
-                    flexWrap: "wrap", 
-                    marginTop: 14, 
-                  }} 
-                > 
-                  <span 
-                    style={{ 
-                      fontSize: 13, 
-                      color: "#64748b", 
-                    }} 
-                  > 
-                    Showing {filteredAccounts.length} of{" "} 
-                    {accounts.length} accounts 
-                  </span> 
- 
-                  <button 
-                    type="button" 
-                    className="secondary-button" 
-                    onClick={() => { 
-                      setSearchTerm(""); 
-                      setTypeFilter(""); 
-                    }} 
-                  > 
-                    Clear Filters 
-                  </button> 
-                </div> 
-              )} 
-            </section>
+        {loading ? (
+          <Loader message="Loading accounts..." fullScreen={false} />
+        ) : (
+          <>
+            {/* TOTAL BALANCE */}
 
-        {/* TOTAL BALANCE */}
-
-        <section className="account-summary-card">
+            <section className="account-summary-card">
 
           <div className="account-summary-icon">
             <Wallet size={25} />
@@ -893,10 +918,7 @@ function Accounts() {
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setTypeFilter("");
-                  }}
+                  onClick={clearFilters}
                 >
                   Clear Filters
                 </button>
@@ -1069,6 +1091,8 @@ function Accounts() {
 
               </section>
             )}
+          </>
+        )}
           </>
         )}
 

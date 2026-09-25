@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { storage } from "../utils/storage";
 import { encryptPassword } from "../utils/passwordEncryption";
+import logo from "../assets/logo.png";
 
 function Login() {
   const navigate = useNavigate();
@@ -114,9 +115,54 @@ const response =
           {/* LEFT PANEL */}
           <section className="login-hero">
             <div>
-              <p className="login-brand">
-                Finance Management
-              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 13,
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 16px rgba(37,99,235,0.12)",
+                    padding: 3,
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <img
+                    src={logo}
+                    alt="FinStack Logo"
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+                <div>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 18,
+                      fontWeight: 800,
+                      color: "#0f172a",
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    FinStack
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#64748b",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Personal Finance
+                  </span>
+                </div>
+              </div>
 
               <h1 className="login-hero-title">
                 Take control of your finances.
@@ -307,13 +353,7 @@ const response =
           justify-content: center;
           padding: 32px 20px;
           box-sizing: border-box;
-          background:
-            radial-gradient(
-              circle at top left,
-              #e0e7ff 0,
-              transparent 32%
-            ),
-            #f1f5f9;
+          background: #eaf4fe;
         }
 
         .login-container {
@@ -322,11 +362,11 @@ const response =
           max-width: 1050px;
           min-height: 620px;
           overflow: hidden;
-          border: 1px solid #e2e8f0;
+          border: 0;
           border-radius: 24px;
           background: #ffffff;
           box-shadow:
-            0 25px 60px rgba(15, 23, 42, 0.12);
+            0 20px 60px rgba(59, 91, 219, 0.18), 0 0 0 1px rgba(160, 205, 245,0.5);
           grid-template-columns: 1fr 1fr;
         }
 
@@ -337,17 +377,17 @@ const response =
           padding: 56px;
           color: #ffffff;
           background:
-            radial-gradient(
-              circle at 85% 15%,
-              rgba(99, 102, 241, 0.45),
-              transparent 28%
-            ),
-            #0f172a;
+            linear-gradient(
+              145deg,
+              #3b5bdb 0%,
+              #2440b0 60%,
+              #1a2f88 100%
+            );
         }
 
         .login-brand {
           margin: 0 0 22px;
-          color: #a5b4fc;
+          color: rgba(255,255,255,0.75);
           font-size: 13px;
           font-weight: 800;
           letter-spacing: 0.2em;
@@ -366,7 +406,7 @@ const response =
         .login-hero-description {
           max-width: 430px;
           margin: 24px 0 0;
-          color: #cbd5e1;
+          color: rgba(255,255,255,0.75);
           font-size: 16px;
           line-height: 1.8;
         }
@@ -375,7 +415,7 @@ const response =
           display: flex;
           align-items: center;
           gap: 10px;
-          color: #94a3b8;
+          color: rgba(255,255,255,0.6);
           font-size: 13px;
         }
 
@@ -383,9 +423,9 @@ const response =
           width: 9px;
           height: 9px;
           border-radius: 50%;
-          background: #818cf8;
+          background: rgba(255,255,255,0.7);
           box-shadow:
-            0 0 0 5px rgba(129, 140, 248, 0.12);
+            0 0 0 5px rgba(255,255,255,0.15);
         }
 
         .login-form-section {
@@ -407,7 +447,7 @@ const response =
 
         .login-welcome {
           margin: 0 0 9px;
-          color: #4f46e5;
+          color: #3b5bdb;
           font-size: 14px;
           font-weight: 700;
         }
@@ -465,8 +505,8 @@ const response =
         }
 
         .login-field input:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 4px #e0e7ff;
+          border-color: #3b5bdb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
         .password-wrapper {
@@ -494,8 +534,8 @@ const response =
         }
 
         .password-toggle:hover {
-          color: #4f46e5;
-          background: #eef2ff;
+          color: #3b5bdb;
+          background: #eaedff;
         }
 
         .login-error {
@@ -510,14 +550,14 @@ const response =
 
         .login-submit {
           width: 100%;
-          height: 49px;
+          height: 48px;
           margin-top: 2px;
-          border: 1px solid #4f46e5;
-          border-radius: 11px;
+          border: 1px solid #3b5bdb;
+          border-radius: 10px;
           color: #ffffff;
-          background: #4f46e5;
+          background: #3b5bdb;
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 700;
           cursor: pointer;
           transition:
             background 0.2s ease,
@@ -525,7 +565,7 @@ const response =
         }
 
         .login-submit:hover:not(:disabled) {
-          background: #4338ca;
+          background: #2f4ac2;
         }
 
         .login-submit:active:not(:disabled) {
@@ -545,13 +585,13 @@ const response =
         }
 
         .login-register a {
-          color: #4f46e5;
+          color: #3b5bdb;
           font-weight: 700;
           text-decoration: none;
         }
 
         .login-register a:hover {
-          color: #4338ca;
+          color: #2f4ac2;
           text-decoration: underline;
         }
 

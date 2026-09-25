@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowDownRight,
@@ -35,6 +35,7 @@ import {
 
 import api from "../api/axios";
 import { storage } from "../utils/storage";
+import Loader from "../components/common/Loader";
 
 interface DashboardSummary {
   totalBalance: number;
@@ -267,6 +268,9 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   minDate?: string;
   maxDate?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  align?: "left" | "right";
 }
 
 function dateFromInput(value: string): Date | null {
@@ -290,10 +294,24 @@ function DatePicker({
   onChange,
   minDate,
   maxDate,
+  isOpen: isOpenProp,
+  onOpenChange,
+  align = "left",
 }: DatePickerProps) {
   const selectedDate = dateFromInput(value);
   const today = new Date();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = isOpenProp !== undefined;
+  const open = isControlled ? isOpenProp : internalOpen;
+
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof next === "function" ? next(open) : next;
+    if (!isControlled) {
+      setInternalOpen(nextVal);
+    }
+    onOpenChange?.(nextVal);
+  };
+
   const [calendarMonth, setCalendarMonth] = useState<Date>(
     selectedDate
       ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -374,7 +392,7 @@ function DatePicker({
           width: "100%",
           minHeight: 48,
           padding: "0 14px",
-          border: open ? "1px solid #2563eb" : "1px solid #dbe3ef",
+          border: open ? "1px solid #3b5bdb" : "1px solid #dbe3ef",
           borderRadius: 12,
           background: "#ffffff",
           display: "flex",
@@ -397,8 +415,8 @@ function DatePicker({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#eff6ff",
-              color: "#2563eb",
+              background: "#eaedff",
+              color: "#3b5bdb",
               flexShrink: 0,
             }}
           >
@@ -435,7 +453,8 @@ function DatePicker({
             position: "absolute",
             zIndex: 50,
             top: "calc(100% + 8px)",
-            left: 0,
+            left: align === "right" ? "auto" : 0,
+            right: align === "right" ? 0 : "auto",
             width: "min(330px, calc(100vw - 32px))",
             padding: 16,
             border: "1px solid #e2e8f0",
@@ -515,7 +534,7 @@ function DatePicker({
                         ? "1px solid #93c5fd"
                         : "1px solid transparent",
                     borderRadius: 9,
-                    background: selected ? "#2563eb" : currentDay ? "#eff6ff" : "transparent",
+                    background: selected ? "#3b5bdb" : currentDay ? "#eaedff" : "transparent",
                     color: selected ? "#ffffff" : disabled ? "#cbd5e1" : "#334155",
                     fontSize: 13,
                     fontWeight: selected || currentDay ? 700 : 500,
@@ -529,7 +548,7 @@ function DatePicker({
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: "1px solid #e8ecff" }}>
             <button
               type="button"
               onClick={() => {
@@ -540,7 +559,7 @@ function DatePicker({
                   setOpen(false);
                 }
               }}
-              style={{ border: "none", background: "transparent", padding: "6px 0", color: "#2563eb", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+              style={{ border: "none", background: "transparent", padding: "6px 0", color: "#3b5bdb", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
             >
               Today
             </button>
@@ -602,6 +621,9 @@ const [chartGroupBy, setChartGroupBy] =
 
   const [endDate, setEndDate] = useState("");
 
+  const [showFilterCard, setShowFilterCard] = useState(false);
+  const [openPicker, setOpenPicker] = useState<"start" | "end" | null>(null);
+
   const [appliedStartDate, setAppliedStartDate] =
     useState("");
 
@@ -611,127 +633,140 @@ const [chartGroupBy, setChartGroupBy] =
   const fetchDashboardData = useCallback(
     async (
       filterStartDate = appliedStartDate,
-      filterEndDate = appliedEndDate
+      filterEndDate = appliedEndDate,
+      isInitial = false
     ) => {
-    try {
-      setError("");
+      try {
+        if (isInitial) {
+          setLoading(true);
+        }
+        setError("");
 
-      const params: {
-  startDate?: string;
-  endDate?: string;
-  groupBy?: ChartGroupBy;
-} = {};
-      if (filterStartDate) {
-        params.startDate = filterStartDate;
-      }
+        const params: {
+          startDate?: string;
+          endDate?: string;
+          groupBy?: ChartGroupBy;
+        } = {};
+        if (filterStartDate) {
+          params.startDate = filterStartDate;
+        }
 
-      if (filterEndDate) {
-        params.endDate = filterEndDate;
-      }
-      params.groupBy = chartGroupBy;
+        if (filterEndDate) {
+          params.endDate = filterEndDate;
+        }
+        params.groupBy = chartGroupBy;
 
-      const [
-        summaryResponse,
-        expensesResponse,
-        incomeResponse,
-        monthlyResponse,
-        accountsResponse,
-      ] = await Promise.all([
-        api.get<SummaryResponse>(
-          "/dashboard/summary",
-          { params }
-        ),
+        const [
+          summaryResponse,
+          expensesResponse,
+          incomeResponse,
+          monthlyResponse,
+          accountsResponse,
+        ] = await Promise.all([
+          api.get<SummaryResponse>(
+            "/dashboard/summary",
+            { params }
+          ),
 
-        api.get<ExpenseCategoryResponse>(
-          "/dashboard/expenses-by-category",
-          { params }
-        ),
+          api.get<ExpenseCategoryResponse>(
+            "/dashboard/expenses-by-category",
+            { params }
+          ),
 
-        api.get<IncomeCategoryResponse>(
-          "/dashboard/income-by-category",
-          { params }
-        ),
+          api.get<IncomeCategoryResponse>(
+            "/dashboard/income-by-category",
+            { params }
+          ),
 
-        api.get<MonthlySummaryResponse>(
-          "/dashboard/monthly-summary",
-          { params }
-        ),
+          api.get<MonthlySummaryResponse>(
+            "/dashboard/monthly-summary",
+            { params }
+          ),
 
-        api.get<AccountsResponse>(
-          "/dashboard/accounts-summary",
-          { params }
-        ),
-      ]);
+          api.get<AccountsResponse>(
+            "/dashboard/accounts-summary",
+            { params }
+          ),
+        ]);
 
-      const summaryData = summaryResponse.data;
-      const expensesData = expensesResponse.data;
-      const incomeData = incomeResponse.data;
-      const monthlyData = monthlyResponse.data;
-      const accountsData = accountsResponse.data;
+        const summaryData = summaryResponse.data;
+        const expensesData = expensesResponse.data;
+        const incomeData = incomeResponse.data;
+        const monthlyData = monthlyResponse.data;
+        const accountsData = accountsResponse.data;
 
-      setSummary({
-        totalBalance: numberValue(
-          summaryData.summary?.totalBalance
-        ),
-        totalIncome: numberValue(
-          summaryData.summary?.totalIncome
-        ),
-        totalExpense: numberValue(
-          summaryData.summary?.totalExpense
-        ),
-        transactionCount: numberValue(
-          summaryData.summary?.transactionCount
-        ),
-        accountCount: numberValue(
-          summaryData.summary?.accountCount
-        ),
-      });
+        setSummary({
+          totalBalance: numberValue(
+            summaryData.summary?.totalBalance
+          ),
+          totalIncome: numberValue(
+            summaryData.summary?.totalIncome
+          ),
+          totalExpense: numberValue(
+            summaryData.summary?.totalExpense
+          ),
+          transactionCount: numberValue(
+            summaryData.summary?.transactionCount
+          ),
+          accountCount: numberValue(
+            summaryData.summary?.accountCount
+          ),
+        });
 
-      setRecentTransactions(
-        Array.isArray(summaryData.recentTransactions)
-          ? summaryData.recentTransactions
-          : []
-      );
+        setRecentTransactions(
+          Array.isArray(summaryData.recentTransactions)
+            ? summaryData.recentTransactions
+            : []
+        );
 
-      setExpenseCategories(
-        Array.isArray(expensesData.categories)
-          ? expensesData.categories
-          : []
-      );
+        setExpenseCategories(
+          Array.isArray(expensesData.categories)
+            ? expensesData.categories
+            : []
+        );
 
-      setIncomeCategories(
-        Array.isArray(incomeData.categories)
-          ? incomeData.categories
-          : []
-      );
+        setIncomeCategories(
+          Array.isArray(incomeData.categories)
+            ? incomeData.categories
+            : []
+        );
 
-      setMonthlySummary(
-        Array.isArray(monthlyData.periods)
-          ? monthlyData.periods
-          : []
-      );
+        setMonthlySummary(
+          Array.isArray(monthlyData.periods)
+            ? monthlyData.periods
+            : []
+        );
 
-      setAccounts(
-        Array.isArray(accountsData.accounts)
-          ? accountsData.accounts
-          : []
-      );
+        setAccounts(
+          Array.isArray(accountsData.accounts)
+            ? accountsData.accounts
+            : []
+        );
       } catch (requestError: unknown) {
         setError(getErrorMessage(requestError));
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+        }
       }
     },
     [
-  appliedStartDate,
-  appliedEndDate,
-  chartGroupBy,
-]
+      appliedStartDate,
+      appliedEndDate,
+      chartGroupBy,
+    ]
   );
 
+  const isFirstMount = useRef(true);
+
   useEffect(() => {
-    void fetchDashboardData();
-  }, [fetchDashboardData]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      void fetchDashboardData(appliedStartDate, appliedEndDate, true);
+    } else {
+      void fetchDashboardData(appliedStartDate, appliedEndDate, false);
+    }
+  }, [fetchDashboardData, appliedStartDate, appliedEndDate]);
 
   const handleApplyFilter = () => {
     if (startDate && endDate && startDate > endDate) {
@@ -742,6 +777,7 @@ const [chartGroupBy, setChartGroupBy] =
     setError("");
     setAppliedStartDate(startDate);
     setAppliedEndDate(endDate);
+    setShowFilterCard(false);
   };
 
   const handleClearFilter = () => {
@@ -750,6 +786,7 @@ const [chartGroupBy, setChartGroupBy] =
     setAppliedStartDate("");
     setAppliedEndDate("");
     setError("");
+    setShowFilterCard(false);
   };
 
   const applyDateRange = (rangeStart: string, rangeEnd: string) => {
@@ -758,6 +795,7 @@ const [chartGroupBy, setChartGroupBy] =
     setAppliedStartDate(rangeStart);
     setAppliedEndDate(rangeEnd);
     setError("");
+    setShowFilterCard(false);
   };
 
   const handleTodayFilter = () => {
@@ -852,7 +890,7 @@ const [chartGroupBy, setChartGroupBy] =
 );
 
   const pieColors = [
-    "#2563eb",
+    "#3b5bdb",
     "#16a34a",
     "#dc2626",
     "#9333ea",
@@ -861,24 +899,6 @@ const [chartGroupBy, setChartGroupBy] =
     "#ca8a04",
     "#db2777",
   ];
-
-  if (loading) {
-    return (
-      <main className="dashboard-loading">
-        <div className="loading-box">
-          <RefreshCw
-            className="loading-icon"
-            size={22}
-          />
-
-          <span>
-            Loading dashboard...
-          </span>
-        </div>
-      </main>
-    );
-  }
-
 
   const chartStyles = (
     <style>
@@ -908,7 +928,7 @@ const [chartGroupBy, setChartGroupBy] =
         }
 
         .chart-period-select:focus {
-          border-color: #2563eb;
+          border-color: #3b5bdb;
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
         }
 
@@ -951,16 +971,182 @@ const [chartGroupBy, setChartGroupBy] =
             </p>
           </div>
 
-        <div className="header-actions">
-  <button
-    type="button"
-    className="dark-button"
-    onClick={handleLogout}
-  >
-    <LogOut size={17} />
-    Logout
-  </button>
-</div>
+          <div className="header-actions">
+            <button
+              type="button"
+              className={`header-filter-btn ${appliedStartDate || appliedEndDate ? "active" : ""}`}
+              onClick={() => {
+                setShowFilterCard((prev) => {
+                  if (prev) setOpenPicker(null);
+                  return !prev;
+                });
+              }}
+              aria-label="Filter dashboard"
+            >
+              <Filter size={14} />
+              <span>
+                {appliedStartDate || appliedEndDate ? "Filter Active" : "Filter"}
+              </span>
+              {(appliedStartDate || appliedEndDate) && (
+                <span className="filter-active-dot" />
+              )}
+            </button>
+
+            {showFilterCard && (
+              <>
+                <div
+                  className="header-filter-backdrop"
+                  onClick={() => {
+                    setShowFilterCard(false);
+                    setOpenPicker(null);
+                  }}
+                />
+                <div className="header-filter-dropdown">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <Filter size={16} color="#3b5bdb" />
+                      <strong style={{ fontSize: 14, color: "#0f172a" }}>
+                        Filter Dashboard
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFilterCard(false);
+                        setOpenPicker(null);
+                      }}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: 4,
+                        display: "flex",
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+                    <DatePicker
+                      label="Start Date"
+                      value={startDate}
+                      onChange={setStartDate}
+                      maxDate={endDate || undefined}
+                      isOpen={openPicker === "start"}
+                      onOpenChange={(isOpen) => setOpenPicker(isOpen ? "start" : null)}
+                      align="left"
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={endDate}
+                      onChange={setEndDate}
+                      minDate={startDate || undefined}
+                      isOpen={openPicker === "end"}
+                      onOpenChange={(isOpen) => setOpenPicker(isOpen ? "end" : null)}
+                      align="right"
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      flexWrap: "wrap",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleTodayFilter();
+                      }}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleThisMonthFilter();
+                      }}
+                    >
+                      This Month
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleLastMonthFilter();
+                      }}
+                    >
+                      Last Month
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleThisYearFilter();
+                      }}
+                    >
+                      This Year
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      borderTop: "1px solid #e8ecff",
+                      paddingTop: 12,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ flex: 1, borderRadius: 12 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleApplyFilter();
+                      }}
+                    >
+                      Apply Filter
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      style={{ borderRadius: 12 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleClearFilter();
+                      }}
+                      disabled={!startDate && !endDate && !appliedStartDate && !appliedEndDate}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </header>
 
         {/* ERROR */}
@@ -978,252 +1164,92 @@ const [chartGroupBy, setChartGroupBy] =
           </div>
         )}
 
-        {/* DATE FILTER */}
-        <section className="panel dashboard-filter-panel">
-          <div className="panel-header">
-            <div>
-              <h2>
-                Filter Dashboard
-              </h2>
-
-              <p>
-                View dashboard data for a specific date range
-              </p>
-            </div>
-
-            <Filter
-              size={21}
-              className="panel-header-icon"
-            />
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-              gap: 16,
-              alignItems: "end",
-            }}
-          >
-            <DatePicker
-              label="Start Date"
-              value={startDate}
-              onChange={setStartDate}
-              maxDate={endDate || undefined}
-            />
-
-            <DatePicker
-              label="End Date"
-              value={endDate}
-              onChange={setEndDate}
-              minDate={startDate || undefined}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-                minHeight: 48,
-                alignItems: "center",
-              }}
-            >
-              <button
-                type="button"
-                className="dark-button"
-                onClick={handleApplyFilter}
-              >
-                <Filter size={16} />
-                Apply Filter
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleClearFilter}
-                disabled={
-                  !startDate &&
-                  !endDate &&
-                  !appliedStartDate &&
-                  !appliedEndDate
-                }
-              >
-                <X size={16} />
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-              marginTop: 14,
-              paddingTop: 14,
-              borderTop: "1px solid #f1f5f9",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#64748b",
-                marginRight: 2,
-              }}
-            >
-              Quick range:
-            </span>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleTodayFilter}
-            >
-              Today
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleThisMonthFilter}
-            >
-              This Month
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleLastMonthFilter}
-            >
-              Last Month
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleThisYearFilter}
-            >
-              This Year
-            </button>
-          </div>
-
-          {(appliedStartDate || appliedEndDate) && (
-            <p
-              style={{
-                margin: "14px 0 0",
-                fontSize: 13,
-                color: "#64748b",
-              }}
-            >
-              Active filter: {appliedStartDate || "Any"} to {appliedEndDate || "Any"}
-            </p>
-          )}
-        </section>
-
-        {/* STAT CARDS */}
-        <section className="stats-grid">
+        {loading ? (
+          <Loader message="Loading dashboard..." fullScreen={false} />
+        ) : (
+          <>
+            {/* STAT CARDS */}
+            <section className="stats-grid">
 
           <div className="stat-card">
             <div className="stat-card-top">
-              <div>
-                <p className="stat-label">
-                  Total Balance
-                </p>
-
-                <h2>
-                  {formatCurrency(
-                    summary.totalBalance
-                  )}
-                </h2>
-              </div>
-
+              <p className="stat-label">
+                Total Balance
+              </p>
               <div className="stat-icon blue-icon">
-                <Wallet size={22} />
+                <Wallet size={18} />
               </div>
             </div>
 
-            <p className="stat-description">
+            <h2 title={formatCurrency(summary.totalBalance)}>
+              {formatCurrency(summary.totalBalance)}
+            </h2>
+
+            <p className="stat-description" title="Across all your accounts">
               Across all your accounts
             </p>
           </div>
 
           <div className="stat-card">
             <div className="stat-card-top">
-              <div>
-                <p className="stat-label">
-                  Total Income
-                </p>
-
-                <h2 className="income-value">
-                  {formatCurrency(
-                    summary.totalIncome
-                  )}
-                </h2>
-              </div>
-
+              <p className="stat-label">
+                Total Income
+              </p>
               <div className="stat-icon green-icon">
-                <ArrowUpRight size={22} />
+                <ArrowUpRight size={18} />
               </div>
             </div>
 
-            <p className="stat-description">
+            <h2 className="income-value" title={formatCurrency(summary.totalIncome)}>
+              {formatCurrency(summary.totalIncome)}
+            </h2>
+
+            <p className="stat-description" title="Total recorded income">
               Total recorded income
             </p>
           </div>
 
           <div className="stat-card">
             <div className="stat-card-top">
-              <div>
-                <p className="stat-label">
-                  Total Expense
-                </p>
-
-                <h2 className="expense-value">
-                  {formatCurrency(
-                    summary.totalExpense
-                  )}
-                </h2>
-              </div>
-
+              <p className="stat-label">
+                Total Expense
+              </p>
               <div className="stat-icon red-icon">
-                <ArrowDownRight size={22} />
+                <ArrowDownRight size={18} />
               </div>
             </div>
 
-            <p className="stat-description">
+            <h2 className="expense-value" title={formatCurrency(summary.totalExpense)}>
+              {formatCurrency(summary.totalExpense)}
+            </h2>
+
+            <p className="stat-description" title="Total recorded expenses">
               Total recorded expenses
             </p>
           </div>
 
           <div className="stat-card">
             <div className="stat-card-top">
-              <div>
-                <p className="stat-label">
-                  Net Savings
-                </p>
-
-                <h2
-                  className={
-                    netSavings >= 0
-                      ? "savings-value"
-                      : "negative-savings-value"
-                  }
-                >
-                  {formatCurrency(netSavings)}
-                </h2>
-              </div>
-
+              <p className="stat-label">
+                Net Savings
+              </p>
               <div className="stat-icon purple-icon">
-                <CircleDollarSign size={22} />
+                <CircleDollarSign size={18} />
               </div>
             </div>
 
-            <p className="stat-description">
+            <h2
+              className={netSavings >= 0 ? "savings-value" : "negative-savings-value"}
+              title={formatCurrency(netSavings)}
+            >
+              {formatCurrency(netSavings)}
+            </h2>
+
+            <p className="stat-description" title="Income minus expenses">
               Income minus expenses
             </p>
           </div>
+
         </section>
 
         {/* INCOME / EXPENSE CHART */}
@@ -1323,7 +1349,7 @@ const [chartGroupBy, setChartGroupBy] =
                     type="monotone"
                     dataKey="net"
                     name="Net"
-                    stroke="#2563eb"
+                    stroke="#3b5bdb"
                     strokeWidth={3}
                     dot={{ r: 4 }}
                   />
@@ -1809,6 +1835,8 @@ const [chartGroupBy, setChartGroupBy] =
             </div>
           )}
         </section>
+          </>
+        )}
 
       </div>
     </main>

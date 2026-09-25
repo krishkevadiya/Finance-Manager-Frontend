@@ -1,4 +1,4 @@
-import {
+﻿import {
   BarChart3,
   CalendarDays,
   ChevronLeft,
@@ -9,7 +9,9 @@ import {
   TrendingDown,
   TrendingUp,
   WalletCards,
+  X,
 } from "lucide-react";
+import Loader from "../components/common/Loader";
 import {
   Bar,
   BarChart,
@@ -23,7 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { storage } from "../utils/storage";
@@ -137,12 +139,21 @@ const errorMessage = (error: unknown): string => {
 };
 
 const css = `
-.reports-page{width:100%;max-width:1440px;margin:0 auto;padding:28px 40px 48px;box-sizing:border-box}
+.reports-page{width:100%;max-width:1440px;margin:0 auto;padding:32px 28px 48px;box-sizing:border-box}
 .reports-back{display:inline-flex;gap:6px;color:#475569;font-size:12px;text-decoration:none;margin-bottom:18px}.reports-back:hover{color:#4f46e5}
-.reports-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px}.reports-eyebrow{margin:0 0 5px;color:#4f46e5;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.reports-title{margin:0;color:#0f172a;font-size:32px;line-height:1.05;font-weight:800}.reports-subtitle{margin:7px 0 0;color:#64748b;font-size:13px}.reports-actions{display:flex;gap:9px}.reports-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 14px;border-radius:9px;border:1px solid #dbe2ea;background:#fff;color:#334155;font-size:12px;font-weight:700;cursor:pointer}.reports-btn:hover{border-color:#c7d2fe;color:#4f46e5}.reports-btn.primary{border-color:#4f46e5;background:#4f46e5;color:#fff}.reports-btn:disabled{opacity:.6;cursor:not-allowed}
-.reports-filter,.reports-panel,.reports-stat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04)}.reports-filter{padding:18px;margin-bottom:20px}.reports-filter-title{display:flex;align-items:center;gap:8px;color:#0f172a;font-size:14px;font-weight:800;margin-bottom:14px}.reports-filter-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.reports-field label{display:block;margin-bottom:6px;color:#64748b;font-size:11px;font-weight:700}.reports-field input{width:100%;height:40px;box-sizing:border-box;padding:0 11px;border:1px solid #cbd5e1;border-radius:8px;outline:none;color:#0f172a;background:#fff;font-size:12px}.reports-field input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.1)}.reports-filter-actions{display:flex;gap:8px}.reports-quick{margin-top:12px;display:flex;flex-wrap:wrap;gap:7px}.reports-quick button{border:1px solid #e2e8f0;background:#f8fafc;color:#475569;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer}.reports-quick button:hover{border-color:#c7d2fe;color:#4f46e5;background:#eef2ff}
-.reports-error{margin:0 0 18px;padding:11px 13px;border:1px solid #fecaca;border-radius:9px;background:#fef2f2;color:#b91c1c;font-size:12px}.reports-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.reports-stat{padding:17px}.reports-stat-top{display:flex;justify-content:space-between;gap:12px}.reports-label{color:#64748b;font-size:11px;font-weight:700}.reports-value{margin-top:7px;color:#0f172a;font-size:22px;line-height:1.15;font-weight:800}.reports-value.income{color:#059669}.reports-value.expense{color:#dc2626}.reports-value.savings{color:#4f46e5}.reports-meta{margin-top:5px;color:#94a3b8;font-size:10px}.reports-icon{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:10px;background:#eef2ff;color:#4f46e5}.reports-icon.income{background:#ecfdf5;color:#059669}.reports-icon.expense{background:#fef2f2;color:#dc2626}.reports-icon.balance{background:#eff6ff;color:#2563eb}
-.reports-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:18px;margin-bottom:18px}.reports-grid.equal{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-panel{min-width:0;padding:18px;margin-bottom:18px}.reports-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.reports-panel-title{margin:0;color:#0f172a;font-size:14px;font-weight:800}.reports-panel-subtitle{margin:4px 0 0;color:#94a3b8;font-size:10px}.reports-chart{width:100%;height:300px}.reports-chart.small{height:270px}.reports-empty,.reports-loading{min-height:210px;display:grid;place-items:center;color:#94a3b8;font-size:12px}.reports-loading{min-height:320px}.reports-table-wrap{width:100%;overflow-x:auto}.reports-table{width:100%;border-collapse:collapse;font-size:12px}.reports-table th{padding:10px 9px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:10px;font-weight:800;text-align:left;white-space:nowrap}.reports-table td{padding:12px 9px;border-bottom:1px solid #f1f5f9;color:#334155;white-space:nowrap}.reports-table tr:last-child td{border-bottom:0}.account-name{color:#0f172a;font-weight:800}.account-type{margin-top:3px;color:#94a3b8;font-size:10px;text-transform:uppercase}.positive{color:#059669!important;font-weight:800}.negative{color:#dc2626!important;font-weight:800}.neutral{color:#4f46e5!important;font-weight:800}.reports-note{margin-top:14px;color:#94a3b8;font-size:10px}
+.reports-header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 4px 20px rgba(37,99,235,0.04),0 1px 3px rgba(15,23,42,0.02);margin-bottom:24px;position:relative}
+.reports-eyebrow{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;padding:4px 11px;border-radius:999px;background:#eaedff;border:1px solid #c5ccf5;color:#3b5bdb;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1}
+.reports-title{margin:0;color:#0f172a;font-size:clamp(24px,2.2vw,32px);line-height:1.2;font-weight:800;letter-spacing:-0.025em}
+.reports-subtitle{margin:6px 0 0;color:#64748b;font-size:14px;font-weight:500;line-height:1.4}
+.reports-actions{display:flex;align-items:center;gap:10px;position:relative}
+.reports-btn{min-height:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border-radius:12px;border:1px solid #dbe3ef;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,0.04);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);white-space:nowrap}
+.reports-btn:hover{border-color:#cbd5e1;color:#1e293b;background:#f8fafc;transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,0.06)}
+.reports-btn.primary{border-color:#3b5bdb;background:#3b5bdb;color:#fff;box-shadow:0 1px 3px rgba(37,99,235,0.15)}
+.reports-btn.primary:hover{background:#2f4ac2;box-shadow:0 4px 12px rgba(37,99,235,0.22)}
+.reports-btn:disabled{opacity:.6;cursor:not-allowed}
+.reports-filter,.reports-panel,.reports-stat{background:#fff;border:1px solid rgba(255,255,255,0.9);border-radius:16px;box-shadow:0 2px 12px rgba(59,91,219,0.08),0 0 0 1px rgba(186, 215, 245,0.5)}.reports-filter{padding:20px;margin-bottom:24px}.reports-filter-title{display:flex;align-items:center;gap:8px;color:#0f172a;font-size:14px;font-weight:800;margin-bottom:14px}.reports-filter-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.reports-field label{display:block;margin-bottom:6px;color:#64748b;font-size:12px;font-weight:700}.reports-field input{width:100%;height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #cbd5e1;border-radius:12px;outline:none;color:#0f172a;background:#fff;font-size:13px}.reports-field input:focus{border-color:#3b5bdb;box-shadow:0 0 0 3px rgba(51,84,244,.12)}.reports-filter-actions{display:flex;gap:8px}.reports-quick{margin-top:12px;display:flex;flex-wrap:wrap;gap:7px}.reports-quick button{border:1px solid #e0e5f8;background:#f8fafc;color:#475569;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}.reports-quick button:hover{border-color:#c7d4fe;color:#3b5bdb;background:#eaedff}
+.reports-error{margin:0 0 20px;padding:12px 16px;border:1px solid #fecaca;border-radius:12px;background:#fef2f2;color:#b91c1c;font-size:13px}.reports-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}.reports-stat{padding:22px 24px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;transition:box-shadow 0.2s ease,transform 0.2s ease}.reports-stat:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(59,91,219,0.13),0 0 0 1px rgba(160, 205, 245,0.7)}.reports-stat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}.reports-label{color:#64748b;font-size:14px;font-weight:600;line-height:1.3;flex:1;min-width:0}.reports-value{margin-top:12px;color:#0f172a;font-size:clamp(20px,1.8vw,26px);line-height:1.2;font-weight:800;letter-spacing:-0.02em;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reports-value.income{color:#059669}.reports-value.expense{color:#dc2626}.reports-value.savings{color:#3b5bdb}.reports-meta{margin-top:10px;color:#94a3b8;font-size:13px;font-weight:500;line-height:1.4;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reports-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:11px;background:#eaedff;color:#3b5bdb}.reports-icon.income{background:#ecfdf5;color:#059669}.reports-icon.expense{background:#fef2f2;color:#dc2626}.reports-icon.balance{background:#eaedff;color:#3b5bdb}
+.reports-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:20px;margin-bottom:20px}.reports-grid.equal{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-panel{min-width:0;padding:24px;margin-bottom:20px}.reports-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.reports-panel-title{margin:0;color:#0f172a;font-size:16px;font-weight:800}.reports-panel-subtitle{margin:5px 0 0;color:#64748b;font-size:12px}.reports-chart{width:100%;height:310px}.reports-chart.small{height:280px}.reports-empty,.reports-loading{min-height:220px;display:grid;place-items:center;color:#94a3b8;font-size:13px}.reports-loading{min-height:320px}.reports-table-wrap{width:100%;overflow-x:auto}.reports-table{width:100%;border-collapse:collapse;font-size:13px}.reports-table th{padding:12px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;text-align:left;white-space:nowrap}.reports-table td{padding:14px 14px;border-bottom:1px solid #e8ecff;color:#334155;white-space:nowrap}.reports-table tr:last-child td{border-bottom:0}.account-name{color:#0f172a;font-weight:750}.account-type{margin-top:3px;color:#94a3b8;font-size:11px;text-transform:uppercase}.positive{color:#059669!important;font-weight:750}.negative{color:#dc2626!important;font-weight:750}.neutral{color:#3b5bdb!important;font-weight:750}.reports-note{margin-top:16px;color:#94a3b8;font-size:11px}
 @media(max-width:1100px){.reports-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-grid{grid-template-columns:1fr}}
 
 @page{size:landscape;margin:10mm}
@@ -196,6 +207,9 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   minDate?: string;
   maxDate?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  align?: "left" | "right";
 }
 
 function dateFromInput(value: string): Date | null {
@@ -213,10 +227,30 @@ function toInputDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function DatePicker({ label, value, onChange, minDate, maxDate }: DatePickerProps) {
+function DatePicker({
+  label,
+  value,
+  onChange,
+  minDate,
+  maxDate,
+  isOpen: isOpenProp,
+  onOpenChange,
+  align = "left",
+}: DatePickerProps) {
   const selectedDate = dateFromInput(value);
   const today = new Date();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = isOpenProp !== undefined;
+  const open = isControlled ? isOpenProp : internalOpen;
+
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof next === "function" ? next(open) : next;
+    if (!isControlled) {
+      setInternalOpen(nextVal);
+    }
+    onOpenChange?.(nextVal);
+  };
+
   const [calendarMonth, setCalendarMonth] = useState<Date>(
     selectedDate
       ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -244,16 +278,16 @@ function DatePicker({ label, value, onChange, minDate, maxDate }: DatePickerProp
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <span style={{ display: "block", marginBottom: 6, fontSize: 10, fontWeight: 700, color: "#475569" }}>{label}</span>
-      <button type="button" onClick={handleOpen} aria-expanded={open} style={{ width: "100%", minHeight: 40, padding: "0 10px", border: open ? "1px solid #2563eb" : "1px solid #cbd5e1", borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer", boxSizing: "border-box", boxShadow: open ? "0 0 0 3px rgba(37,99,235,.10)" : "none" }}>
+      <button type="button" onClick={handleOpen} aria-expanded={open} style={{ width: "100%", minHeight: 44, padding: "0 12px", border: open ? "1px solid #3b5bdb" : "1px solid #cbd5e1", borderRadius: 12, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer", boxSizing: "border-box", boxShadow: open ? "0 0 0 3px rgba(37,99,235,.10)" : "none" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ width: 28, height: 28, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#2563eb", flexShrink: 0 }}><CalendarDays size={15} /></span>
+          <span style={{ width: 28, height: 28, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#eaedff", color: "#3b5bdb", flexShrink: 0 }}><CalendarDays size={15} /></span>
           <span style={{ fontSize: 12, fontWeight: value ? 600 : 500, color: value ? "#0f172a" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayValue}</span>
         </span>
         <span style={{ color: "#64748b", transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease", fontSize: 11 }}>▾</span>
       </button>
 
       {open && (
-        <div style={{ position: "absolute", zIndex: 100, top: "calc(100% + 8px)", left: 0, width: "min(330px, calc(100vw - 32px))", padding: 16, border: "1px solid #e2e8f0", borderRadius: 16, background: "#fff", boxShadow: "0 20px 45px rgba(15,23,42,.16), 0 4px 12px rgba(15,23,42,.06)", boxSizing: "border-box" }}>
+        <div style={{ position: "absolute", zIndex: 100, top: "calc(100% + 8px)", left: align === "right" ? "auto" : 0, right: align === "right" ? 0 : "auto", width: "min(330px, calc(100vw - 32px))", padding: 16, border: "1px solid #e2e8f0", borderRadius: 16, background: "#fff", boxShadow: "0 20px 45px rgba(15,23,42,.16), 0 4px 12px rgba(15,23,42,.06)", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <button type="button" onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))} aria-label="Previous month" style={{ width: 34, height: 34, border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", color: "#334155", display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ChevronLeft size={18} /></button>
             <strong style={{ fontSize: 15, color: "#0f172a" }}>{monthLabel}</strong>
@@ -272,12 +306,12 @@ function DatePicker({ label, value, onChange, minDate, maxDate }: DatePickerProp
               const disabled = isDisabled(dateString);
               const selected = dateString === value;
               const currentDay = dateString === toInputDate(today);
-              return <button type="button" key={dateString} disabled={disabled} onClick={() => { if (!disabled) { onChange(dateString); setOpen(false); } }} style={{ height: 36, border: currentDay && !selected ? "1px solid #93c5fd" : "1px solid transparent", borderRadius: 9, background: selected ? "#2563eb" : currentDay ? "#eff6ff" : "transparent", color: selected ? "#fff" : disabled ? "#cbd5e1" : "#334155", fontSize: 13, fontWeight: selected || currentDay ? 700 : 500, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .7 : 1 }}>{dayNumber}</button>;
+              return <button type="button" key={dateString} disabled={disabled} onClick={() => { if (!disabled) { onChange(dateString); setOpen(false); } }} style={{ height: 36, border: currentDay && !selected ? "1px solid #93c5fd" : "1px solid transparent", borderRadius: 9, background: selected ? "#3b5bdb" : currentDay ? "#eaedff" : "transparent", color: selected ? "#fff" : disabled ? "#cbd5e1" : "#334155", fontSize: 13, fontWeight: selected || currentDay ? 700 : 500, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .7 : 1 }}>{dayNumber}</button>;
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-            <button type="button" onClick={() => { const todayString = toInputDate(today); if (!isDisabled(todayString)) { onChange(todayString); setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setOpen(false); } }} style={{ border: "none", background: "transparent", padding: "6px 0", color: "#2563eb", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Today</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: "1px solid #e8ecff" }}>
+            <button type="button" onClick={() => { const todayString = toInputDate(today); if (!isDisabled(todayString)) { onChange(todayString); setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setOpen(false); } }} style={{ border: "none", background: "transparent", padding: "6px 0", color: "#3b5bdb", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Today</button>
             <button type="button" onClick={() => { onChange(""); setOpen(false); }} disabled={!value} style={{ border: "none", background: "transparent", padding: "6px 0", color: value ? "#64748b" : "#cbd5e1", fontSize: 13, fontWeight: 600, cursor: value ? "pointer" : "not-allowed" }}>Clear</button>
           </div>
         </div>
@@ -306,14 +340,23 @@ function Reports() {
   const [endDate, setEndDate] = useState("");
   const [appliedStart, setAppliedStart] = useState("");
   const [appliedEnd, setAppliedEnd] = useState("");
+  const [showFilterCard, setShowFilterCard] = useState(false);
+  const [openPicker, setOpenPicker] = useState<"start" | "end" | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(
-    async (start = appliedStart, end = appliedEnd) => {
+    async (
+      start = appliedStart,
+      end = appliedEnd,
+      isInitial = false
+    ) => {
       try {
+        if (isInitial) {
+          setLoading(true);
+        }
         setError("");
 
         const params: {
@@ -413,16 +456,25 @@ function Reports() {
 
         setError(errorMessage(err));
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+        }
         setRefreshing(false);
       }
     },
     [appliedStart, appliedEnd, navigate]
   );
 
+  const isFirstMount = useRef(true);
+
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      void load(appliedStart, appliedEnd, true);
+    } else {
+      void load(appliedStart, appliedEnd, false);
+    }
+  }, [load, appliedStart, appliedEnd]);
 
   const apply = (start: string, end: string) => {
     setStartDate(start);
@@ -430,6 +482,7 @@ function Reports() {
     setAppliedStart(start);
     setAppliedEnd(end);
     setError("");
+    setShowFilterCard(false);
   };
 
   const today = new Date();
@@ -621,31 +674,11 @@ function Reports() {
     num(summary.totalIncome) -
     num(summary.totalExpense);
 
-  if (loading) {
-    return (
-      <>
-        <style>{css}</style>
-        <div className="reports-page">
-          <div className="reports-loading">
-            Loading reports...
-          </div>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <style>{css}</style>
 
       <div className="reports-page">
-        <Link
-          className="reports-back"
-          to="/dashboard"
-        >
-          ← Back to Dashboard
-        </Link>
-
         <header className="reports-header">
           <div>
             <p className="reports-eyebrow">
@@ -667,7 +700,21 @@ function Reports() {
             </div>
           </div>
 
-          <div className="reports-actions">
+          <div className="reports-actions" style={{ position: "relative" }}>
+            <button
+              className={`reports-btn ${appliedStart || appliedEnd ? "primary" : ""}`}
+              type="button"
+              onClick={() => {
+                setShowFilterCard((prev) => {
+                  if (prev) setOpenPicker(null);
+                  return !prev;
+                });
+              }}
+            >
+              <CalendarDays size={14} />
+              {appliedStart || appliedEnd ? "Period Active" : "Filter Period"}
+            </button>
+
             <button
               className="reports-btn"
               type="button"
@@ -697,89 +744,178 @@ function Reports() {
               <Download size={14} />
               Print / PDF
             </button>
+
+            {showFilterCard && (
+              <>
+                <div
+                  className="header-filter-backdrop"
+                  onClick={() => {
+                    setShowFilterCard(false);
+                    setOpenPicker(null);
+                  }}
+                />
+                <div
+                  className="header-filter-dropdown"
+                  style={{ width: "min(360px, calc(100vw - 32px))" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <CalendarDays size={16} color="#3b5bdb" />
+                      <strong style={{ fontSize: 14, color: "#0f172a" }}>
+                        Filter Report Period
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFilterCard(false);
+                        setOpenPicker(null);
+                      }}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: 4,
+                        display: "flex",
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+                    <DatePicker
+                      label="Start Date"
+                      value={startDate}
+                      onChange={setStartDate}
+                      maxDate={endDate || undefined}
+                      isOpen={openPicker === "start"}
+                      onOpenChange={(isOpen) => setOpenPicker(isOpen ? "start" : null)}
+                      align="left"
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={endDate}
+                      onChange={setEndDate}
+                      minDate={startDate || undefined}
+                      isOpen={openPicker === "end"}
+                      onOpenChange={(isOpen) => setOpenPicker(isOpen ? "end" : null)}
+                      align="right"
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      flexWrap: "wrap",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="reports-btn"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        const date = inputDate(new Date());
+                        apply(date, date);
+                      }}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      className="reports-btn"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        thisMonth();
+                      }}
+                    >
+                      This Month
+                    </button>
+                    <button
+                      type="button"
+                      className="reports-btn"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        lastMonth();
+                      }}
+                    >
+                      Last Month
+                    </button>
+                    <button
+                      type="button"
+                      className="reports-btn"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        thisYear();
+                      }}
+                    >
+                      This Year
+                    </button>
+                    <button
+                      type="button"
+                      className="reports-btn"
+                      style={{ fontSize: 11, padding: "6px 10px", minHeight: "auto", borderRadius: 10 }}
+                      onClick={() => {
+                        setOpenPicker(null);
+                        clear();
+                      }}
+                    >
+                      All Time
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      borderTop: "1px solid #e8ecff",
+                      paddingTop: 12,
+                    }}
+                  >
+                    <button
+                      className="reports-btn primary"
+                      style={{ flex: 1, borderRadius: 12 }}
+                      type="button"
+                      onClick={() => {
+                        setOpenPicker(null);
+                        handleApply();
+                      }}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      className="reports-btn"
+                      style={{ borderRadius: 12 }}
+                      type="button"
+                      onClick={() => {
+                        setOpenPicker(null);
+                        clear();
+                      }}
+                      disabled={!startDate && !endDate && !appliedStart && !appliedEnd}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </header>
-
-        <section className="reports-filter">
-          <div className="reports-filter-title">
-            <CalendarDays size={15} />
-            Report Period
-          </div>
-
-          <div className="reports-filter-grid">
-            <DatePicker
-              label="Start Date"
-              value={startDate}
-              onChange={setStartDate}
-              maxDate={endDate || undefined}
-            />
-
-            <DatePicker
-              label="End Date"
-              value={endDate}
-              onChange={setEndDate}
-              minDate={startDate || undefined}
-            />
-
-            <div className="reports-filter-actions">
-              <button
-                className="reports-btn primary"
-                type="button"
-                onClick={handleApply}
-              >
-                Apply
-              </button>
-
-              <button
-                className="reports-btn"
-                type="button"
-                onClick={clear}
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <div className="reports-quick">
-            <button
-              type="button"
-              onClick={() => {
-                const date = inputDate(new Date());
-                apply(date, date);
-              }}
-            >
-              Today
-            </button>
-
-            <button
-              type="button"
-              onClick={thisMonth}
-            >
-              This Month
-            </button>
-
-            <button
-              type="button"
-              onClick={lastMonth}
-            >
-              Last Month
-            </button>
-
-            <button
-              type="button"
-              onClick={thisYear}
-            >
-              This Year
-            </button>
-
-            <button
-              type="button"
-              onClick={clear}
-            >
-              All Time
-            </button>
-          </div>
-        </section>
 
         {error && (
           <div className="reports-error">
@@ -787,93 +923,84 @@ function Reports() {
           </div>
         )}
 
-        <section className="reports-summary">
+        {loading ? (
+          <Loader message="Loading reports..." fullScreen={false} />
+        ) : (
+          <>
+            <section className="reports-summary">
           <article className="reports-stat">
             <div className="reports-stat-top">
-              <div>
-                <div className="reports-label">
-                  Total Income
-                </div>
-
-                <div className="reports-value income">
-                  {money(summary.totalIncome)}
-                </div>
-
-                <div className="reports-meta">
-                  {num(summary.transactionCount)}{" "}
-                  transactions
-                </div>
+              <div className="reports-label">
+                Total Income
               </div>
-
               <div className="reports-icon income">
                 <TrendingUp size={18} />
               </div>
             </div>
+
+            <div className="reports-value income">
+              {money(summary.totalIncome)}
+            </div>
+
+            <div className="reports-meta">
+              {num(summary.transactionCount)} transactions
+            </div>
           </article>
 
           <article className="reports-stat">
             <div className="reports-stat-top">
-              <div>
-                <div className="reports-label">
-                  Total Expense
-                </div>
-
-                <div className="reports-value expense">
-                  {money(summary.totalExpense)}
-                </div>
-
-                <div className="reports-meta">
-                  Recorded expenses
-                </div>
+              <div className="reports-label">
+                Total Expense
               </div>
-
               <div className="reports-icon expense">
                 <TrendingDown size={18} />
               </div>
             </div>
-          </article>
 
-          <article className="reports-stat">
-            <div className="reports-stat-top">
-              <div>
-                <div className="reports-label">
-                  Net Savings
-                </div>
+            <div className="reports-value expense">
+              {money(summary.totalExpense)}
+            </div>
 
-                <div className="reports-value savings">
-                  {money(savings)}
-                </div>
-
-                <div className="reports-meta">
-                  Income minus expenses
-                </div>
-              </div>
-
-              <div className="reports-icon">
-                <BarChart3 size={18} />
-              </div>
+            <div className="reports-meta">
+              Recorded expenses
             </div>
           </article>
 
           <article className="reports-stat">
             <div className="reports-stat-top">
-              <div>
-                <div className="reports-label">
-                  Current Balance
-                </div>
-
-                <div className="reports-value">
-                  {money(summary.totalBalance)}
-                </div>
-
-                <div className="reports-meta">
-                  {num(summary.accountCount)} accounts
-                </div>
+              <div className="reports-label">
+                Net Savings
               </div>
+              <div className="reports-icon">
+                <BarChart3 size={18} />
+              </div>
+            </div>
 
+            <div className="reports-value savings">
+              {money(savings)}
+            </div>
+
+            <div className="reports-meta">
+              Income minus expenses
+            </div>
+          </article>
+
+          <article className="reports-stat">
+            <div className="reports-stat-top">
+              <div className="reports-label">
+                Current Balance
+              </div>
               <div className="reports-icon balance">
                 <WalletCards size={18} />
               </div>
+            </div>
+
+            <div className="reports-value">
+              {money(summary.totalBalance)}
+            </div>
+
+            <div className="reports-meta">
+              {num(summary.accountCount)} accounts
             </div>
           </article>
         </section>
@@ -901,7 +1028,7 @@ function Reports() {
                   <BarChart data={monthly}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#e2e8f0"
+                      stroke="#e0e4f5"
                     />
 
                     <XAxis
@@ -976,7 +1103,7 @@ function Reports() {
                   <BarChart data={monthly}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#e2e8f0"
+                      stroke="#e0e4f5"
                     />
 
                     <XAxis
@@ -1242,6 +1369,8 @@ function Reports() {
             as the existing Dashboard.
           </div>
         </article>
+          </>
+        )}
       </div>
     </>
   );

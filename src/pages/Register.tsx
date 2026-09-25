@@ -18,6 +18,7 @@ import {
 
 import api from "../api/axios";
 import { encryptPassword } from "../utils/passwordEncryption";
+import logo from "../assets/logo.png";
 
 interface RegisterResponse {
   message?: string;
@@ -36,7 +37,7 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     overflow: "hidden",
     background:
-      "radial-gradient(circle at 10% 15%, rgba(79,70,229,0.15), transparent 30%), radial-gradient(circle at 90% 85%, rgba(37,99,235,0.14), transparent 30%), #f1f5f9",
+      "radial-gradient(circle at 10% 15%, rgba(79,70,229,0.15), transparent 30%), radial-gradient(circle at 90% 85%, rgba(37,99,235,0.14), transparent 30%), #eaf4fe",
     fontFamily:
       "Inter, Arial, Helvetica, sans-serif",
   },
@@ -89,18 +90,18 @@ const styles: Record<string, CSSProperties> = {
   },
 
   logo: {
-    width: "58px",
-    height: "58px",
+    width: "62px",
+    height: "62px",
     margin: "0 auto 20px",
-    borderRadius: "17px",
+    borderRadius: "18px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#ffffff",
-    background:
-      "linear-gradient(135deg, #4f46e5, #2563eb)",
-    boxShadow:
-      "0 12px 28px rgba(79,70,229,0.28)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 10px 28px rgba(37,99,235,0.12)",
+    padding: "4px",
+    boxSizing: "border-box",
   },
 
   title: {
@@ -226,7 +227,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: "12px",
     color: "#ffffff",
     background:
-      "linear-gradient(135deg, #4f46e5, #2563eb)",
+      "linear-gradient(135deg, #3b5bdb, #3b5bdb)",
     fontSize: "14px",
     fontWeight: 800,
     cursor: "pointer",
@@ -244,7 +245,7 @@ const styles: Record<string, CSSProperties> = {
   },
 
   loginLink: {
-    color: "#4f46e5",
+    color: "#3b5bdb",
     fontWeight: 800,
     textDecoration: "none",
   },
@@ -513,7 +514,11 @@ const handleConfirmPasswordChange = (
         <div style={styles.card}>
           <div style={styles.header}>
             <div style={styles.logo}>
-              <UserPlus size={24} />
+              <img
+                src={logo}
+                alt="FinStack Logo"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
 
             <h1 style={styles.title}>
