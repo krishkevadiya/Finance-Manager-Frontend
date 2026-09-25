@@ -488,6 +488,14 @@ function Categories() {
               closeModal();
             }
           }}
+          onTouchEnd={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeModal();
+            }
+          }}
         >
           <div className="modal-card">
             <div className="modal-header">

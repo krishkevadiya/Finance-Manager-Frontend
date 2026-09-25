@@ -665,6 +665,14 @@ function Budgets() {
     ]);
   };
 
+  const expenseCategoryOptions: SelectOption[] = useMemo(() => [
+    { value: "", label: "Select expense category" },
+    ...expenseCategories.map((cat) => ({
+      value: String(cat.id),
+      label: cat.name,
+    })),
+  ], [expenseCategories]);
+
   return (
     <>
       <main className="dashboard-page">
@@ -1076,13 +1084,7 @@ function Budgets() {
   </button>
 </div>
             ) : (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: 16,
-                }}
-              >
+              <div className="budgets-grid">
                 {budgets.map((budget) => {
                   const catName = budget.category?.name ?? "";
                   const CategoryIcon = getCategoryIcon(catName);
@@ -1380,6 +1382,11 @@ function Budgets() {
               closeModal();
             }
           }}
+          onTouchEnd={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
           style={{
             position: "fixed",
             inset: 0,
@@ -1522,88 +1529,32 @@ function Budgets() {
                   </div>
                 )}
 
-                <label
-                  style={{
-                    display:
-                      "grid",
-                    gap: 7,
-                  }}
-                >
+                <div style={{ display: "grid", gap: 7 }}>
                   <span
                     style={{
                       fontSize: 13,
-                      fontWeight:
-                        700,
-                      color:
-                        "#334155",
+                      fontWeight: 700,
+                      color: "#334155",
                     }}
                   >
                     Expense Category
                   </span>
-
-                  <select
-                    value={
-                      formData.categoryId
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setFormData(
-                        (current) => ({
-                          ...current,
-                          categoryId:
-                            readValue(
-                              event
-                            ),
-                        })
-                      )
+                  <CustomSelect
+                    value={formData.categoryId}
+                    options={expenseCategoryOptions}
+                    placeholder="Select expense category"
+                    onChange={(val) =>
+                      setFormData((current) => ({
+                        ...current,
+                        categoryId: val,
+                      }))
                     }
                     disabled={saving}
-                    style={{
-                      width:
-                        "100%",
-                      boxSizing:
-                        "border-box",
-                      padding:
-                        "12px 13px",
-                      border:
-                        "1px solid #dbe3ee",
-                      borderRadius:
-                        10,
-                      background:
-                        "#fff",
-                      color:
-                        "#0f172a",
-                      fontSize: 14,
-                      outline:
-                        "none",
-                    }}
-                  >
-                    <option value="">
-                      Select expense
-                      category
-                    </option>
-
-                    {expenseCategories.map(
-                      (
-                        category
-                      ) => (
-                        <option
-                          key={
-                            category.id
-                          }
-                          value={
-                            category.id
-                          }
-                        >
-                          {
-                            category.name
-                          }
-                        </option>
-                      )
-                    )}
-                  </select>
-                </label>
+                    minHeight={46}
+                    borderRadius={10}
+                    zIndex={1200}
+                  />
+                </div>
 
                 <label
                   style={{
@@ -1702,83 +1653,31 @@ function Budgets() {
                     gap: 14,
                   }}
                 >
-                  <label
-                    style={{
-                      display:
-                        "grid",
-                      gap: 7,
-                    }}
-                  >
+                  <div style={{ display: "grid", gap: 7 }}>
                     <span
                       style={{
                         fontSize: 13,
-                        fontWeight:
-                          700,
-                        color:
-                          "#334155",
+                        fontWeight: 700,
+                        color: "#334155",
                       }}
                     >
                       Month
                     </span>
-
-                    <select
-                      value={
-                        formData.month
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setFormData(
-                          (current) => ({
-                            ...current,
-                            month:
-                              readValue(
-                                event
-                              ),
-                          })
-                        )
+                    <CustomSelect
+                      value={formData.month}
+                      options={MONTH_OPTIONS}
+                      onChange={(val) =>
+                        setFormData((current) => ({
+                          ...current,
+                          month: val,
+                        }))
                       }
                       disabled={saving}
-                      style={{
-                        width:
-                          "100%",
-                        boxSizing:
-                          "border-box",
-                        padding:
-                          "12px 13px",
-                        border:
-                          "1px solid #dbe3ee",
-                        borderRadius:
-                          10,
-                        background:
-                          "#fff",
-                        color:
-                          "#0f172a",
-                        fontSize: 14,
-                        outline:
-                          "none",
-                      }}
-                    >
-                      {MONTHS.map(
-                        (
-                          month,
-                          index
-                        ) => (
-                          <option
-                            key={
-                              month
-                            }
-                            value={
-                              index +
-                              1
-                            }
-                          >
-                            {month}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </label>
+                      minHeight={46}
+                      borderRadius={10}
+                      zIndex={1150}
+                    />
+                  </div>
 
                   <label
                     style={{

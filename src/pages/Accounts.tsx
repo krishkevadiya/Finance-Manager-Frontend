@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -93,6 +93,14 @@ const ACCOUNT_TYPE_OPTIONS: SelectOption[] = [
   { value: "", label: "All Types" },
   { value: "bank", label: "Bank" },
   { value: "cash", label: "Cash" },
+  { value: "credit_card", label: "Credit Card" },
+  { value: "investment", label: "Investment" },
+  { value: "other", label: "Other" },
+];
+
+const ACCOUNT_TYPE_MODAL_OPTIONS: SelectOption[] = [
+  { value: "cash", label: "Cash" },
+  { value: "bank", label: "Bank" },
   { value: "credit_card", label: "Credit Card" },
   { value: "investment", label: "Investment" },
   { value: "other", label: "Other" },
@@ -1104,6 +1112,16 @@ function Accounts() {
         <div
           className="modal-overlay"
           role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+          onTouchEnd={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
         >
 
           <div
@@ -1187,39 +1205,24 @@ function Accounts() {
 
               <div className="form-field">
 
-                <label htmlFor="account-type">
+                <label>
                   Account Type
                 </label>
 
-                <select
-                  id="account-type"
-                  value={
-                    formData.type
+                <CustomSelect
+                  value={formData.type}
+                  options={ACCOUNT_TYPE_MODAL_OPTIONS}
+                  onChange={(val) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: val as AccountType,
+                    }))
                   }
-                  onChange={(event) =>
-                    updateFormField(
-                      "type",
-                      event
-                    )
-                  }
-                >
-
-                  {ACCOUNT_TYPES.map(
-                    (type) => (
-                      <option
-                        key={type}
-                        value={type}
-                      >
-                        {
-                          ACCOUNT_TYPE_LABELS[
-                            type
-                          ]
-                        }
-                      </option>
-                    )
-                  )}
-
-                </select>
+                  disabled={saving}
+                  minHeight={46}
+                  borderRadius={10}
+                  zIndex={1200}
+                />
 
               </div>
 
@@ -1343,6 +1346,16 @@ function Accounts() {
         <div
           className="modal-overlay"
           role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteTarget(null);
+            }
+          }}
+          onTouchEnd={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteTarget(null);
+            }
+          }}
         >
 
           <div

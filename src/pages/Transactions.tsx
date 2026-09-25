@@ -312,6 +312,7 @@ function DatePicker({
   const selectedDate = parseInputDate(value);
 
   const [internalOpen, setInternalOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isControlled = isOpenProp !== undefined;
   const open = isControlled ? isOpenProp : internalOpen;
 
@@ -322,6 +323,27 @@ function DatePicker({
     }
     onOpenChange?.(nextVal);
   };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutsideInteraction = (event: any) => {
+      if (
+        containerRef.current &&
+        !(containerRef.current as any).contains(event?.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    (document as any).addEventListener("mousedown", handleOutsideInteraction);
+    (document as any).addEventListener("touchstart", handleOutsideInteraction);
+
+    return () => {
+      (document as any).removeEventListener("mousedown", handleOutsideInteraction);
+      (document as any).removeEventListener("touchstart", handleOutsideInteraction);
+    };
+  }, [open]);
 
   const [calendarView, setCalendarView] = useState<"days" | "months" | "years">("days");
   const [calendarMonth, setCalendarMonth] = useState<Date>(
@@ -435,6 +457,7 @@ function DatePicker({
 
   return (
     <div
+      ref={containerRef}
       style={{
         position: "relative",
         width: "100%",
@@ -1578,6 +1601,46 @@ function Transactions() {
     [categories, filters.type]
   );
 
+  const TRANSACTION_MODAL_TYPE_OPTIONS: SelectOption[] = useMemo(
+    () => [
+      { value: "expense", label: "Expense" },
+      { value: "income", label: "Income" },
+    ],
+    []
+  );
+
+  const modalAccountOptions: SelectOption[] = useMemo(
+    () =>
+      accounts.map((account) => ({
+        value: String(account.id),
+        label: account.name,
+      })),
+    [accounts]
+  );
+
+  const modalCategoryOptions: SelectOption[] = useMemo(() => {
+    const list: SelectOption[] = [];
+    if (formData.category && !currentCategoryExists) {
+      list.push({
+        value: formData.category,
+        label: `${formData.category} (current)`,
+      });
+    }
+    for (const category of availableCategories) {
+      list.push({
+        value: category.name,
+        label: `${category.name}${
+          category.type === "both"
+            ? " (Income & Expense)"
+            : category.type === "income"
+              ? " (Income)"
+              : " (Expense)"
+        }`,
+      });
+    }
+    return list;
+  }, [availableCategories, currentCategoryExists, formData.category]);
+
   return (
     <main className="dashboard-page">
 
@@ -1719,7 +1782,7 @@ function Transactions() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
                         gap: 10,
                       }}
                     >
@@ -2347,7 +2410,20 @@ function Transactions() {
       {/* CREATE / EDIT MODAL */}
 
       {showModal && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+          onTouchEnd={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+        >
 
           <div className="account-modal">
 
@@ -2390,29 +2466,21 @@ function Transactions() {
             >
 
               <div className="form-field">
-
                 <label>
                   Transaction Type
                 </label>
-
-                <select
-                  value={
-                    formData.type
-                  }
-                  onChange={(event) => {
-                    const value = getEventValue(event);
-
+                <CustomSelect
+                  value={formData.type}
+                  options={TRANSACTION_MODAL_TYPE_OPTIONS}
+                  onChange={(value) => {
                     const nextType: TransactionType =
-                      value === "income"
-                        ? "income"
-                        : "expense";
+                      value === "income" ? "income" : "expense";
 
                     setFormData((previous) => {
-                      const selectedCategory =
-                        categories.find(
-                          (category) =>
-                            category.name === previous.category
-                        );
+                      const selectedCategory = categories.find(
+                        (category) =>
+                          category.name === previous.category
+                      );
 
                       const categoryStillValid =
                         !selectedCategory ||
@@ -2428,26 +2496,17 @@ function Transactions() {
                       };
                     });
                   }}
-                >
-
-                  <option value="expense">
-                    Expense
-                  </option>
-
-                  <option value="income">
-                    Income
-                  </option>
-
-                </select>
-
+                  disabled={saving}
+                  minHeight={46}
+                  borderRadius={10}
+                  zIndex={1200}
+                />
               </div>
 
               <div className="form-field">
-
                 <label>
                   Amount
                 </label>
-
                 <input
                   type="number"
                   min="0.01"
@@ -2464,92 +2523,48 @@ function Transactions() {
                   placeholder="0.00"
                   required
                 />
-
               </div>
 
               <div className="form-field">
-
                 <label>
                   Account
                 </label>
-
-                <select
-                  value={
-                    formData.accountId
+                <CustomSelect
+                  value={formData.accountId ? String(formData.accountId) : ""}
+                  options={modalAccountOptions}
+                  placeholder="Select Account"
+                  onChange={(val) =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      accountId: val,
+                    }))
                   }
-                  onChange={(event) =>
-                    updateFormField(
-                      "accountId",
-                      event
-                    )
-                  }
-                  required
-                >
-
-                  <option value="">
-                    Select Account
-                  </option>
-
-                  {accounts.map(
-                    (account) => (
-                      <option
-                        key={account.id}
-                        value={account.id}
-                      >
-                        {account.name}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
+                  disabled={saving}
+                  minHeight={46}
+                  borderRadius={10}
+                  zIndex={1150}
+                />
               </div>
 
               <div className="form-field">
-
                 <label>
                   Category
                 </label>
-
-                <select
+                <CustomSelect
                   value={formData.category}
-                  onChange={(event) =>
-                    updateFormField(
-                      "category",
-                      event
-                    )
+                  options={modalCategoryOptions}
+                  placeholder="Select Category"
+                  onChange={(val) =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      category: val,
+                    }))
                   }
-                  required
-                >
-
-                  <option value="">
-                    Select Category
-                  </option>
-
-                  {formData.category &&
-                  !currentCategoryExists ? (
-                    <option value={formData.category}>
-                      {formData.category} (current)
-                    </option>
-                  ) : null}
-
-                  {availableCategories.map(
-                    (category) => (
-                      <option
-                        key={category.id}
-                        value={category.name}
-                      >
-                        {category.name}
-                        {category.type === "both"
-                          ? " (Income & Expense)"
-                          : category.type === "income"
-                            ? " (Income)"
-                            : " (Expense)"}
-                      </option>
-                    )
-                  )}
-
-                </select>
+                  disabled={saving}
+                  minHeight={46}
+                  borderRadius={10}
+                  zIndex={1100}
+                />
 
                 {categories.length === 0 && (
                   <span className="form-hint">
@@ -2664,7 +2679,20 @@ function Transactions() {
       {/* DELETE CONFIRMATION */}
 
       {deleteTarget && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteTarget(null);
+            }
+          }}
+          onTouchEnd={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteTarget(null);
+            }
+          }}
+        >
 
           <div className="account-modal">
 

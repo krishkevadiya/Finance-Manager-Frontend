@@ -1,4 +1,4 @@
-﻿import {
+import {
   BarChart3,
   CalendarDays,
   ChevronLeft,
@@ -187,7 +187,8 @@ const css = `
   .reports-note{font-size:8px!important;margin-top:7px!important}
 }
 .reports-print-period{display:none}
-@media(max-width:760px){.reports-page{padding:22px 16px 36px}.reports-header{align-items:flex-start;flex-direction:column}.reports-actions{width:100%}.reports-actions .reports-btn{flex:1}.reports-filter-grid,.reports-summary,.reports-grid.equal{grid-template-columns:1fr}.reports-filter-actions .reports-btn{flex:1}.reports-title{font-size:28px}.reports-chart,.reports-chart.small{height:260px}}
+@media(max-width:760px){.reports-page{padding:22px 16px 36px}.reports-header{align-items:flex-start;flex-direction:column;gap:16px}.reports-actions{width:100%;flex-wrap:wrap;gap:8px}.reports-actions .reports-btn{flex:1 1 calc(50% - 6px);min-width:120px}.reports-filter-grid,.reports-summary,.reports-grid,.reports-grid.equal{grid-template-columns:1fr}.reports-filter-actions .reports-btn{flex:1}.reports-title{font-size:28px}.reports-chart,.reports-chart.small{height:260px}}
+@media(max-width:480px){.reports-page{padding:16px 12px 32px}.reports-title{font-size:24px}.reports-actions .reports-btn{flex:1 1 100%}.reports-panel{padding:16px 14px!important}.reports-stat{padding:16px 14px!important}}
 `;
 
 const inputValue = (event: unknown): string => {

@@ -36,6 +36,7 @@ import {
 import api from "../api/axios";
 import { storage } from "../utils/storage";
 import Loader from "../components/common/Loader";
+import CustomSelect, { SelectOption } from "../components/common/CustomSelect";
 
 interface DashboardSummary {
   totalBalance: number;
@@ -99,6 +100,13 @@ type ChartGroupBy =
   | "week"
   | "month"
   | "year";
+
+const CHART_GROUP_BY_OPTIONS: SelectOption[] = [
+  { value: "day", label: "Day" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+  { value: "year", label: "Year" },
+];
 
 interface MonthlySummaryResponse {
   filters?: {
@@ -1265,21 +1273,26 @@ const [chartGroupBy, setChartGroupBy] =
             </div>
 
             <div className="chart-header-actions">
-              <select
+              <CustomSelect
                 value={chartGroupBy}
-                onChange={(event) =>
-                  setChartGroupBy(
-                    getInputValue(event) as ChartGroupBy
-                  )
-                }
-                className="chart-period-select"
-                aria-label="Chart period"
-              >
-                <option value="day">Day</option>
-                <option value="week">Week</option>
-                <option value="month">Month</option>
-                <option value="year">Year</option>
-              </select>
+                options={CHART_GROUP_BY_OPTIONS}
+                onChange={(val) => setChartGroupBy(val as ChartGroupBy)}
+                containerStyle={{ width: 110, flexShrink: 0 }}
+                buttonStyle={{
+                  height: 38,
+                  minHeight: 38,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  border: "1px solid #dbe3ef",
+                  background: "#ffffff",
+                  padding: "0 12px",
+                }}
+                minHeight={38}
+                borderRadius={10}
+                zIndex={100}
+                align="right"
+              />
 
               <TrendingUp
                 size={21}

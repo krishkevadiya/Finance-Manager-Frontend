@@ -65,18 +65,20 @@ export default function CustomSelect({
   useEffect(() => {
     if (!open) return;
 
-    const handleDocumentClick = (e: MouseEvent) => {
+    const handleDocumentClick = (e: any) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !(containerRef.current as any).contains(e?.target)
       ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleDocumentClick);
+    (document as any).addEventListener("mousedown", handleDocumentClick);
+    (document as any).addEventListener("touchstart", handleDocumentClick);
     return () => {
-      document.removeEventListener("mousedown", handleDocumentClick);
+      (document as any).removeEventListener("mousedown", handleDocumentClick);
+      (document as any).removeEventListener("touchstart", handleDocumentClick);
     };
   }, [open]);
 
@@ -172,6 +174,7 @@ export default function CustomSelect({
             right: align === "right" ? 0 : (menuWidth ? "auto" : 0),
             width: menuWidth ?? (align === "right" ? "max-content" : undefined),
             minWidth: menuWidth ?? "100%",
+            maxWidth: "calc(100vw - 32px)",
             background: "#ffffff",
             border: "1px solid #e2e8f0",
             borderRadius: 14,

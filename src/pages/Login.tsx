@@ -154,7 +154,7 @@ const response =
                       display: "block",
                       fontSize: 10,
                       fontWeight: 700,
-                      color: "#64748b",
+                      color: "#A8B1BE",
                       letterSpacing: "0.1em",
                       textTransform: "uppercase",
                     }}

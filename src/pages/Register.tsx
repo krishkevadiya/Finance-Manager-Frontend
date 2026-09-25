@@ -499,7 +499,19 @@ const handleConfirmPasswordChange = (
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="register-page">
+      <style>{`
+        @media (max-width: 520px) {
+          .register-page {
+            padding: 16px 12px !important;
+          }
+          .register-card {
+            padding: 24px 18px !important;
+            border-radius: 18px !important;
+          }
+        }
+      `}</style>
+
       <div
         style={styles.decorationOne}
       />
@@ -511,7 +523,7 @@ const handleConfirmPasswordChange = (
       <div
         style={styles.container}
       >
-        <div style={styles.card}>
+        <div style={styles.card} className="register-card">
           <div style={styles.header}>
             <div style={styles.logo}>
               <img
