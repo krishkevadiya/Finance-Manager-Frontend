@@ -141,7 +141,7 @@ const errorMessage = (error: unknown): string => {
 const css = `
 .reports-page{width:100%;max-width:1440px;margin:0 auto;padding:32px 28px 48px;box-sizing:border-box}
 .reports-back{display:inline-flex;gap:6px;color:#475569;font-size:12px;text-decoration:none;margin-bottom:18px}.reports-back:hover{color:#4f46e5}
-.reports-header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 4px 20px rgba(37,99,235,0.04),0 1px 3px rgba(15,23,42,0.02);margin-bottom:24px;position:relative}
+.reports-header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 24px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 4px 20px rgba(37,99,235,0.04),0 1px 3px rgba(15,23,42,0.02);margin-bottom:24px;position:relative}
 .reports-eyebrow{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;padding:4px 11px;border-radius:999px;background:#eaedff;border:1px solid #c5ccf5;color:#3b5bdb;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1}
 .reports-title{margin:0;color:#0f172a;font-size:clamp(24px,2.2vw,32px);line-height:1.2;font-weight:800;letter-spacing:-0.025em}
 .reports-subtitle{margin:6px 0 0;color:#64748b;font-size:14px;font-weight:500;line-height:1.4}
@@ -682,10 +682,6 @@ function Reports() {
       <div className="reports-page">
         <header className="reports-header">
           <div>
-            <p className="reports-eyebrow">
-              Finance Management
-            </p>
-
             <h1 className="reports-title">
               Reports &amp; Analytics
             </h1>

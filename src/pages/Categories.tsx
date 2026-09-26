@@ -315,10 +315,6 @@ function Categories() {
       <div className="dashboard-container">
         <header className="dashboard-header">
           <div>
-            <p className="eyebrow">
-              Finance Management
-            </p>
-
             <h1>Categories</h1>
 
             <p className="page-subtitle">

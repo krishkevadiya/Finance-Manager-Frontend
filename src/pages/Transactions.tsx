@@ -1652,10 +1652,6 @@ function Transactions() {
 
           <div>
 
-            <p className="eyebrow">
-              Finance Management
-            </p>
-
             <h1>
               Transactions
             </h1>

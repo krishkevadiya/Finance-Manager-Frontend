@@ -631,10 +631,6 @@ function Accounts() {
 
           <div>
 
-            <p className="eyebrow">
-              Finance Management
-            </p>
-
             <h1>
               Accounts
             </h1>

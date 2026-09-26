@@ -966,10 +966,6 @@ const [chartGroupBy, setChartGroupBy] =
         {/* HEADER */}
         <header className="dashboard-header">
           <div>
-            <p className="eyebrow">
-              Finance Management
-            </p>
-
             <h1>
               Dashboard
             </h1>

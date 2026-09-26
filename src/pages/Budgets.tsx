@@ -679,10 +679,6 @@ function Budgets() {
         <div className="dashboard-container">
           <header className="dashboard-header">
             <div>
-              <p className="eyebrow">
-                Finance Management
-              </p>
-
               <h1>Budgets</h1>
 
               <p className="page-subtitle">

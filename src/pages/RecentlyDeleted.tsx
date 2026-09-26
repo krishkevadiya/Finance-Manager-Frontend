@@ -27,6 +27,25 @@ export interface DeletedItem {
 
 type FilterType = "all" | "transaction" | "account" | "budget" | "category";
 
+function browserConfirm(message: string): boolean {
+  const browser = globalThis as unknown as {
+    confirm?: (message: string) => boolean;
+  };
+
+  if (typeof browser.confirm === "function") {
+    return browser.confirm(message);
+  }
+
+  return true;
+}
+
+const logError = (...args: unknown[]) => {
+  const browser = globalThis as unknown as {
+    console?: { error?: (...args: unknown[]) => void };
+  };
+  browser.console?.error?.(...args);
+};
+
 export default function RecentlyDeleted() {
   const [items, setItems] = useState<DeletedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +70,7 @@ export default function RecentlyDeleted() {
         setItems(response.data.data);
       }
     } catch (err: any) {
-      console.error("Fetch deleted items error:", err);
+      logError("Fetch deleted items error:", err);
       setErrorMessage(
         err.response?.data?.message || "Failed to load recently deleted items"
       );
@@ -82,7 +101,7 @@ export default function RecentlyDeleted() {
   };
 
   const handleDeletePermanently = async (id: number) => {
-    if (!window.confirm("Are you sure you want to permanently delete this item? This action cannot be undone.")) {
+    if (!browserConfirm("Are you sure you want to permanently delete this item? This action cannot be undone.")) {
       return;
     }
 
@@ -105,7 +124,7 @@ export default function RecentlyDeleted() {
 
   const handleRestoreAll = async () => {
     if (items.length === 0) return;
-    if (!window.confirm(`Restore all ${items.length} deleted items?`)) return;
+    if (!browserConfirm(`Restore all ${items.length} deleted items?`)) return;
 
     try {
       setBulkLoading(true);
@@ -126,7 +145,7 @@ export default function RecentlyDeleted() {
 
   const handleEmptyTrash = async () => {
     if (items.length === 0) return;
-    if (!window.confirm("Permanently delete ALL items in Recently Deleted? This cannot be undone.")) return;
+    if (!browserConfirm("Permanently delete ALL items in Recently Deleted? This cannot be undone.")) return;
 
     try {
       setBulkLoading(true);
@@ -245,10 +264,6 @@ export default function RecentlyDeleted() {
         {/* HEADER */}
         <section className="dashboard-header">
           <div className="header-title-wrap">
-            <p className="eyebrow-chip">
-              <Archive size={13} />
-              Backup & Data Recovery
-            </p>
             <h1>Recently Deleted</h1>
             <p className="page-subtitle">
               Items deleted by mistake are safely backed up here. Restore them anytime.
